@@ -1,10 +1,6 @@
 # =============================================================================
 # Deploy Backend → Azure Web App (onera-orchd-backend)
 # =============================================================================
-# Triggers:
-#   - Push to main when backend packages change
-#   - Manual dispatch (deploy any time)
-# =============================================================================
 name: Deploy Backend
 
 on:
@@ -68,19 +64,40 @@ jobs:
           pnpm --filter @onera/database exec prisma migrate deploy || \
             (echo "Retry after 10s..." && sleep 10 && pnpm --filter @onera/database exec prisma migrate deploy)
 
-      - name: Package backend
+      - name: Prepare deployment package
         run: |
-          zip -r "${{ github.workspace }}/backend-deploy.zip" . \
-            -x ".git/*" -x ".github/*" -x "packages/frontend/*" \
-            -x "*.map" -x ".env*" -q
-          echo "Package size: $(du -sh ${{ github.workspace }}/backend-deploy.zip | cut -f1)"
+          mkdir -p deploy/packages
+
+          # Copy built workspace packages (dist + package.json)
+          for pkg in database shared ai tools agents backend; do
+            mkdir -p deploy/packages/$pkg
+            cp -r packages/$pkg/dist deploy/packages/$pkg/dist
+            cp packages/$pkg/package.json deploy/packages/$pkg/
+          done
+
+          # Copy prisma schema (needed by @prisma/client at runtime)
+          cp -r packages/database/prisma deploy/packages/database/prisma
+
+          # Copy root package.json and pnpm workspace config
+          cp package.json deploy/
+          cp pnpm-workspace.yaml deploy/
+          cp pnpm-lock.yaml deploy/
+
+          # Copy node_modules (all resolved workspace + external deps)
+          cp -r node_modules deploy/node_modules
+
+          # Copy each package's node_modules if they exist
+          for pkg in database shared ai tools agents backend; do
+            if [ -d "packages/$pkg/node_modules" ]; then
+              cp -r packages/$pkg/node_modules deploy/packages/$pkg/node_modules
+            fi
+          done
+
+          echo "Deploy dir size: $(du -sh deploy | cut -f1)"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: onera-orchd-backend
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ github.workspace }}/backend-deploy.zip
-          type: zip
-          clean: true
-          restart: true
+          package: deploy

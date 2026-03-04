@@ -1,6 +1,6 @@
 # =============================================================================
 # Deploy Frontend → Azure Web App (onera-orchd-frontend)
-# Builds Next.js standalone output, zips it, deploys via Azure CLI
+# Builds Next.js standalone output, deploys as folder
 # =============================================================================
 name: Deploy Frontend
 
@@ -54,11 +54,11 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
         run: pnpm --filter @onera/frontend run build
 
-      - name: Package standalone output
+      - name: Prepare deployment package
         run: |
           STANDALONE=packages/frontend/.next/standalone
 
-          # Copy static assets (monorepo: path mirrors repo structure)
+          # Copy static assets into standalone (monorepo mirrors repo structure)
           STATIC_DEST="$STANDALONE/packages/frontend/.next/static"
           mkdir -p "$STATIC_DEST"
           cp -r packages/frontend/.next/static/. "$STATIC_DEST/"
@@ -69,21 +69,14 @@ jobs:
               "$STANDALONE/packages/frontend/public"
           fi
 
-          cd "$STANDALONE"
-          zip -r "${{ github.workspace }}/frontend-deploy.zip" . -x "*.map" -q
-          FILE_COUNT=$(unzip -l "${{ github.workspace }}/frontend-deploy.zip" | tail -1 | awk '{print $2}')
-          echo "Package size: $(du -sh ${{ github.workspace }}/frontend-deploy.zip | cut -f1), files: $FILE_COUNT"
-          if [ "$FILE_COUNT" -lt 10 ]; then
-            echo "ERROR: Zip has too few files ($FILE_COUNT). Build likely failed."
-            exit 1
-          fi
+          # The standalone dir IS the deploy package
+          # Startup command: node packages/frontend/server.js
+          echo "Deploy dir size: $(du -sh $STANDALONE | cut -f1)"
+          ls "$STANDALONE"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: onera-orchd-frontend
           publish-profile: ${{ secrets.AZURE_WEBAPP_FRONTEND_PUBLISH_PROFILE }}
-          package: ${{ github.workspace }}/frontend-deploy.zip
-          type: zip
-          clean: true
-          restart: true
+          package: packages/frontend/.next/standalone
