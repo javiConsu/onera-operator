@@ -224,3 +224,40 @@ export interface HealthCheck {
   timestamp: string;
   checks: Record<string, string>;
 }
+
+// ─── Public live dashboard types ─────────────────────────────────────────────
+
+export interface PublicAgentStatus {
+  name: string;
+  displayName: string;
+  status: string;
+  lastRunAt: string | null;
+  tasksCompleted: number;
+}
+
+export interface PublicTask {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  agentName: string | null;
+  updatedAt: string;
+  completedAt: string | null;
+  projectSlug: string;
+}
+
+export interface PublicLiveData {
+  agents: PublicAgentStatus[];
+  tasks: PublicTask[];
+  stats: {
+    totalTasksCompleted: number;
+    emailsSent: number;
+    tweetsPosted: number;
+    activeProjects: number;
+  };
+  hasRealData: boolean;
+}
+
+export const publicApi = {
+  live: () => fetchApi<PublicLiveData>("/api/public/live"),
+};
