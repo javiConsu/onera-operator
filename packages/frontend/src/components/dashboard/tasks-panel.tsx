@@ -12,6 +12,7 @@ interface TasksPanelProps {
 export function TasksPanel({ projectId }: TasksPanelProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -59,7 +60,14 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
 
       <div className="space-y-3 overflow-y-auto max-h-[700px] pr-1 scrollbar-thin">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            isSelected={selectedTaskId === task.id}
+            onSelect={() =>
+              setSelectedTaskId((prev) => (prev === task.id ? null : task.id))
+            }
+          />
         ))}
         {tasks.length === 0 && (
           <div className="border border-dashed border-border p-6 text-center">
@@ -74,17 +82,19 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
           </div>
         )}
       </div>
-
-      {tasks.length > 0 && (
-        <button className="text-xs text-primary hover:underline">
-          Manage &rarr;
-        </button>
-      )}
     </div>
   );
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({
+  task,
+  isSelected,
+  onSelect,
+}: {
+  task: Task;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
   const statusColor = (() => {
     switch (task.status) {
       case "COMPLETED":
@@ -98,8 +108,28 @@ function TaskCard({ task }: { task: Task }) {
     }
   })();
 
+  const parsedResult = task.result
+    ? (() => {
+        try {
+          const r = JSON.parse(task.result) as Record<string, unknown>;
+          if (typeof r.error === "string") return `Error: ${r.error}`;
+          if (typeof r.text === "string" && r.text.length > 0) return r.text;
+          return null;
+        } catch {
+          return task.result;
+        }
+      })()
+    : null;
+
   return (
-    <div className="border border-dashed border-border p-4 space-y-2 hover:border-primary/50 transition-colors">
+    <div
+      className={`border border-dashed p-4 space-y-2 cursor-pointer transition-colors ${
+        isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-primary/50"
+      }`}
+      onClick={onSelect}
+    >
       <h4 className="font-bold text-sm leading-tight text-foreground">
         {task.title}
       </h4>
@@ -111,12 +141,29 @@ function TaskCard({ task }: { task: Task }) {
       <div className="flex items-center gap-2 pt-1 flex-wrap">
         <Badge variant="secondary">{task.category}</Badge>
         <Badge variant={statusColor}>{task.status}</Badge>
+        {task.agentName && (
+          <Badge variant="outline" className="text-[10px]">
+            {task.agentName}
+          </Badge>
+        )}
         {task.scheduledFor && (
           <Badge variant="outline" className="text-[10px]">
             {formatDate(task.scheduledFor)}
           </Badge>
         )}
       </div>
+
+      {/* Expanded result preview */}
+      {isSelected && parsedResult && (
+        <div className="mt-2 border-t border-dashed border-border/50 pt-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">
+            Result
+          </p>
+          <p className="text-[10px] leading-relaxed text-foreground/80 line-clamp-8">
+            {parsedResult}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
