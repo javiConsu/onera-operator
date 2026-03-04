@@ -1,0 +1,22 @@
+{
+  "name": "onera-operator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI operator that runs growth and operations for your startup",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "dev:backend": "pnpm --filter @onera/backend run dev",
+    "dev:frontend": "pnpm --filter @onera/frontend run dev",
+    "build": "pnpm -r run build",
+    "db:generate": "pnpm --filter @onera/database run generate",
+    "db:push": "pnpm --filter @onera/database run push",
+    "db:migrate": "pnpm --filter @onera/database run migrate",
+    "db:studio": "pnpm --filter @onera/database run studio",
+    "clean": "pnpm -r run clean && rm -rf node_modules"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

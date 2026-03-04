@@ -1,0 +1,220 @@
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
+async function fetchApi<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+    ...options,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(error.error || `API error: ${res.status}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+// Projects
+export const api = {
+  projects: {
+    list: (userId?: string) =>
+      fetchApi<Project[]>(
+        `/api/projects${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`
+      ),
+    get: (id: string) => fetchApi<Project>(`/api/projects/${id}`),
+    create: (data: CreateProjectData) =>
+      fetchApi<Project>("/api/projects", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<CreateProjectData>) =>
+      fetchApi<Project>(`/api/projects/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      fetchApi<void>(`/api/projects/${id}`, { method: "DELETE" }),
+  },
+
+  tasks: {
+    list: (filters?: TaskFilters) => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined) params.set(key, String(value));
+        });
+      }
+      const query = params.toString();
+      return fetchApi<Task[]>(`/api/tasks${query ? `?${query}` : ""}`);
+    },
+    get: (id: string) => fetchApi<Task>(`/api/tasks/${id}`),
+    create: (data: CreateTaskData) =>
+      fetchApi<Task>("/api/tasks", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateStatus: (id: string, status: string, result?: string) =>
+      fetchApi<Task>(`/api/tasks/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, result }),
+      }),
+    metrics: (projectId: string) =>
+      fetchApi<TaskMetrics>(`/api/tasks/metrics?projectId=${projectId}`),
+  },
+
+  agents: {
+    list: () => fetchApi<AgentStatus[]>("/api/agents"),
+    logs: (limit?: number) =>
+      fetchApi<ExecutionLog[]>(
+        `/api/agents/logs${limit ? `?limit=${limit}` : ""}`
+      ),
+  },
+
+  reports: {
+    list: (projectId: string, limit?: number) =>
+      fetchApi<DailyReport[]>(
+        `/api/reports?projectId=${projectId}${limit ? `&limit=${limit}` : ""}`
+      ),
+    latest: (projectId: string) =>
+      fetchApi<DailyReport>(`/api/reports/latest?projectId=${projectId}`),
+    generate: (projectId?: string) =>
+      fetchApi<{ message: string }>("/api/reports/generate", {
+        method: "POST",
+        body: JSON.stringify({ projectId }),
+      }),
+  },
+
+  loop: {
+    trigger: (projectId?: string) =>
+      fetchApi<{ message: string }>("/api/loop/trigger", {
+        method: "POST",
+        body: JSON.stringify({ projectId }),
+      }),
+  },
+
+  activity: (projectId?: string) =>
+    fetchApi<{ lines: string[] }>(
+      `/api/activity${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`
+    ),
+
+  health: () => fetchApi<HealthCheck>("/api/health"),
+};
+
+// Types for the API client
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  product: string | null;
+  targetUsers: string | null;
+  competitors: string | null;
+  goals: string | null;
+  website: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProjectData {
+  userId?: string;
+  name: string;
+  description?: string;
+  product?: string;
+  targetUsers?: string;
+  competitors?: string;
+  goals?: string;
+  website?: string;
+  autoResearch?: boolean;
+}
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  status: string;
+  automatable: boolean;
+  agentName: string | null;
+  result: string | null;
+  scheduledFor: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  project?: { name: string };
+}
+
+export interface CreateTaskData {
+  projectId: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  automatable?: boolean;
+  agentName?: string;
+}
+
+export interface TaskFilters {
+  projectId?: string;
+  status?: string;
+  category?: string;
+  priority?: string;
+  automatable?: boolean;
+}
+
+export interface TaskMetrics {
+  completed: number;
+  pending: number;
+  failed: number;
+  inProgress: number;
+}
+
+export interface AgentStatus {
+  id: string;
+  name: string;
+  displayName: string;
+  status: string;
+  lastRunAt: string | null;
+  lastError: string | null;
+  tasksCompleted: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExecutionLog {
+  id: string;
+  taskId: string;
+  agentName: string;
+  action: string;
+  input: string | null;
+  output: string | null;
+  status: string;
+  duration: number | null;
+  createdAt: string;
+  task?: { title: string; projectId: string };
+}
+
+export interface DailyReport {
+  id: string;
+  projectId: string;
+  day: number;
+  date: string;
+  content: string;
+  tasksCompleted: string | null;
+  tasksPlanned: string | null;
+  metrics: string | null;
+  createdAt: string;
+}
+
+export interface HealthCheck {
+  status: string;
+  timestamp: string;
+  checks: Record<string, string>;
+}
