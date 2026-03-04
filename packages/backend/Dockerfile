@@ -25,6 +25,7 @@ COPY --from=deps /app/packages/agents/node_modules ./packages/agents/node_module
 COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
 COPY . .
 RUN pnpm --filter @onera/database run generate
+RUN pnpm --filter @onera/database run build
 RUN pnpm --filter @onera/shared run build
 RUN pnpm --filter @onera/ai run build
 RUN pnpm --filter @onera/tools run build

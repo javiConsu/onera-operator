@@ -1,0 +1,79 @@
+# =============================================================================
+# Database Migrations — Run Prisma migrations manually
+# =============================================================================
+# For emergency or out-of-band migrations. The deploy workflow handles
+# migrations automatically, but this can be triggered independently.
+# =============================================================================
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "prod"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      action:
+        description: "Migration action"
+        required: true
+        default: "deploy"
+        type: choice
+        options:
+          - deploy
+          - status
+          - reset
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  migrate:
+    name: Run Migration (${{ github.event.inputs.action }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Run migration — deploy
+        if: github.event.inputs.action == 'deploy'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm --filter @onera/database exec prisma migrate deploy
+
+      - name: Run migration — status
+        if: github.event.inputs.action == 'status'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm --filter @onera/database exec prisma migrate status
+
+      - name: Run migration — reset (DANGER)
+        if: github.event.inputs.action == 'reset'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "⚠️  WARNING: This will RESET the database and lose all data!"
+          pnpm --filter @onera/database exec prisma migrate reset --force

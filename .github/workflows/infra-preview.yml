@@ -1,0 +1,45 @@
+# =============================================================================
+# Infrastructure Preview — Validate Bicep & show what-if diff on PRs
+# =============================================================================
+name: Infrastructure Preview
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+
+jobs:
+  preview:
+    name: What-If Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Validate Bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az bicep build --file infra/main.bicep
+            echo "Bicep template validated successfully"
+
+      - name: What-if deployment preview
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az deployment group what-if \
+              --resource-group onera-prod-rg \
+              --template-file infra/main.bicep \
+              --parameters infra/parameters.prod.bicepparam \
+              --parameters \
+                pgAdminPassword='${{ secrets.PG_ADMIN_PASSWORD }}' \
+                aiApiKey='${{ secrets.AI_API_KEY }}' \
+                clerkPublishableKey='${{ secrets.CLERK_PUBLISHABLE_KEY }}' \
+                clerkSecretKey='${{ secrets.CLERK_SECRET_KEY }}' \
+              --result-format FullResourcePayloads \
+              2>&1 | head -200 || true
