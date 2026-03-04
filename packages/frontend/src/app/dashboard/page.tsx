@@ -37,7 +37,7 @@ export default function DashboardPage() {
       })
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user?.id]);
 
   if (loading) {
     return (

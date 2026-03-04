@@ -36,7 +36,7 @@ async function main() {
   }
 
   // Start workers (non-blocking — if Redis is down, workers will retry/fail gracefully)
-  if (process.env.REDIS_URL && process.env.REDIS_URL !== "redis://localhost:6379") {
+  if (process.env.REDIS_URL) {
     try {
       const { startTaskWorker } = await import("./workers/task.worker.js");
       const { startSchedulerWorker } = await import("./workers/scheduler.worker.js");
