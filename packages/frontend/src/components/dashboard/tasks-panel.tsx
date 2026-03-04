@@ -114,7 +114,8 @@ function TaskCard({
           const r = JSON.parse(task.result) as Record<string, unknown>;
           if (typeof r.error === "string") return `Error: ${r.error}`;
           if (typeof r.text === "string" && r.text.length > 0) return r.text;
-          return null;
+          // Fall back to pretty-printing the full object
+          return JSON.stringify(r, null, 2);
         } catch {
           return task.result;
         }
@@ -153,15 +154,27 @@ function TaskCard({
         )}
       </div>
 
-      {/* Expanded result preview */}
-      {isSelected && parsedResult && (
+      {/* Expanded detail section */}
+      {isSelected && (
         <div className="mt-2 border-t border-dashed border-border/50 pt-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">
-            Result
-          </p>
-          <p className="text-[10px] leading-relaxed text-foreground/80 line-clamp-8">
-            {parsedResult}
-          </p>
+          {parsedResult ? (
+            <>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">
+                Result
+              </p>
+              <p className="text-[10px] leading-relaxed text-foreground/80 line-clamp-8 whitespace-pre-wrap">
+                {parsedResult}
+              </p>
+            </>
+          ) : (
+            <p className="text-[10px] text-muted-foreground italic">
+              {task.status === "PENDING"
+                ? "Waiting to be executed..."
+                : task.status === "IN_PROGRESS"
+                  ? "Agent is working on this..."
+                  : "No result recorded."}
+            </p>
+          )}
         </div>
       )}
     </div>
