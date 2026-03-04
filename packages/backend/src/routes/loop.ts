@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { getSchedulerQueue } from "../queue/scheduler.queue.js";
+import { getSchedulerQueue, getReportQueue } from "../queue/scheduler.queue.js";
 
 export async function loopRoutes(app: FastifyInstance) {
   // Manually trigger one agent loop cycle
@@ -26,7 +26,7 @@ export async function loopRoutes(app: FastifyInstance) {
     "/api/reports/generate",
     async (request, reply) => {
       const { projectId } = request.body || {};
-      const queue = getSchedulerQueue();
+      const queue = getReportQueue();
 
       await queue.add("manual-daily-report", {
         type: "daily-report",
