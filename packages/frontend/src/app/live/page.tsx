@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,263 +8,505 @@ import {
   type PublicLiveData,
   type PublicAgentStatus,
   type PublicTask,
+  type PublicTweet,
+  type PublicEmail,
+  type TerminalLine,
 } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
 
+// ---------------------------------------------------------------------------
+// Elapsed-time hook (for running tasks)
+// ---------------------------------------------------------------------------
+function useElapsed(startIso: string | null, active: boolean): string {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    if (!active || !startIso) {
+      setText("");
+      return;
+    }
+    const tick = () => {
+      const s = Math.max(0, Math.floor((Date.now() - new Date(startIso).getTime()) / 1000));
+      setText(`${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startIso, active]);
+  return text;
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
 export default function LivePage() {
   const [data, setData] = useState<PublicLiveData | null>(null);
   const [, setTick] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
-      const result = await publicApi.live();
-      setData(result);
+      setData(await publicApi.live());
     } catch {
-      // silently ignore — keep showing last data
+      /* keep last data */
     }
   }, []);
 
   useEffect(() => {
     fetchData();
-    const dataInterval = setInterval(fetchData, 5000);
-    const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
+    const d = setInterval(fetchData, 5000);
+    const t = setInterval(() => setTick((n) => n + 1), 1000);
     return () => {
-      clearInterval(dataInterval);
-      clearInterval(tickInterval);
+      clearInterval(d);
+      clearInterval(t);
     };
   }, [fetchData]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Terminal bar */}
-      <div className="terminal-bar px-6 py-2 flex items-center gap-3 overflow-hidden">
-        <span className="text-primary animate-pulse shrink-0">●</span>
-        <span className="text-xs truncate">
-          {data
-            ? `${data.agents.filter((a) => a.status === "running").length} agents running · ${data.stats.totalTasksCompleted} tasks completed all-time`
-            : "Connecting to live feed..."}
-        </span>
-        <span className="animate-blink ml-auto shrink-0">_</span>
-      </div>
+      {/* ── Scrolling terminal bar ───────────────────────────────── */}
+      <TerminalBar lines={data?.terminalLines ?? []} />
 
-      {/* Header */}
-      <header className="border-b border-dashed border-border bg-background">
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <header className="border-b border-dashed border-border bg-background shrink-0">
         <div className="flex h-12 items-center justify-between px-6">
-          <Link href="/home" className="text-xl font-bold tracking-tight text-primary">
-            OneraOS
-          </Link>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] uppercase tracking-wider text-primary font-bold">
-                Live
-              </span>
-            </div>
-            <Link href="/login">
-              <Button size="sm">Start yours &rarr;</Button>
+            <Link href="/home" className="text-xl font-bold tracking-tight text-primary">
+              OneraOS
             </Link>
+            <span className="inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              Live
+            </span>
           </div>
+          <Link href="/login">
+            <Button size="sm">Try OneraOS &rarr;</Button>
+          </Link>
         </div>
       </header>
 
-      {/* Main three-column layout */}
+      {/* ── 4-column dashboard ───────────────────────────────────── */}
       <div className="flex-1 grid grid-cols-12 overflow-hidden">
-        {/* Column 1: Agents */}
+        {/* Col 1 — Operator status + Business stats */}
+        <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5 space-y-6">
+          <OperatorColumn data={data} />
+        </div>
+
+        {/* Col 2 — Tasks */}
+        <div className="col-span-4 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5">
+          <TasksColumn tasks={data?.tasks ?? []} stats={data?.stats} />
+        </div>
+
+        {/* Col 3 — Twitter + Email */}
         <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5">
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          <SocialColumn
+            tweets={data?.tweets ?? []}
+            emails={data?.emails ?? []}
+            stats={data?.stats}
+          />
+        </div>
+
+        {/* Col 4 — CTA sidebar */}
+        <div className="col-span-3 overflow-y-auto scrollbar-thin p-5 flex flex-col">
+          <CtaColumn agents={data?.agents ?? []} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Scrolling terminal bar
+// ---------------------------------------------------------------------------
+function TerminalBar({ lines }: { lines: TerminalLine[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [lines]);
+
+  // Fallback lines when no real data
+  const display =
+    lines.length > 0
+      ? lines
+      : [
+          { text: "Initializing Onera Operator...", status: "success", timestamp: new Date().toISOString() },
+          { text: "Loading agents: planner, twitter, outreach, research", status: "success", timestamp: new Date().toISOString() },
+          { text: "Agent loop scheduled: every 4 hours", status: "success", timestamp: new Date().toISOString() },
+          { text: "Awaiting tasks...", status: "success", timestamp: new Date().toISOString() },
+        ];
+
+  return (
+    <div
+      ref={scrollRef}
+      className="terminal-bar px-6 py-1.5 overflow-hidden shrink-0"
+      style={{ maxHeight: 80 }}
+    >
+      {display.slice(-6).map((l, i) => (
+        <div key={i} className="terminal-line opacity-80 truncate leading-snug">
+          {l.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Col 1 — Operator status + stats
+// ---------------------------------------------------------------------------
+function OperatorColumn({ data }: { data: PublicLiveData | null }) {
+  const running = data?.agents.filter((a) => a.status === "running").length ?? 0;
+  const stats = data?.stats;
+
+  return (
+    <>
+      {/* Operator face */}
+      <div>
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          OneraOS
+        </h3>
+        <div className="border border-dashed border-border p-4 flex items-center gap-3">
+          <div className="text-primary text-xs leading-none whitespace-pre font-bold shrink-0">
+            {`| ^  ^ |
+| ${running > 0 ? "-__-" : "o  o"} |
+|______|`}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-primary">
+              {running > 0 ? "Working" : "Idle"}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {running > 0
+                ? `${running} agent${running > 1 ? "s" : ""} active`
+                : "Waiting for next loop"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Business stats */}
+      <div>
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Business
+        </h3>
+        <div className="space-y-2">
+          {[
+            ["Tasks Completed", stats?.totalTasksCompleted ?? 0],
+            ["Last 24h", stats?.tasksLast24h ?? 0],
+            ["Emails Sent", stats?.emailsSent ?? 0],
+            ["Tweets Posted", stats?.tweetsPosted ?? 0],
+            ["Active Projects", stats?.activeProjects ?? 0],
+          ].map(([label, value]) => (
+            <div key={label as string} className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{label as string}</span>
+              <span className="font-bold text-primary tabular-nums">
+                {(value as number).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Agent roster */}
+      {data && data.agents.length > 0 && (
+        <div>
+          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Agents
           </h3>
-          {data ? <AgentRoster agents={data.agents} /> : <LoadingPulse />}
-        </div>
-
-        {/* Column 2: Activity feed */}
-        <div className="col-span-6 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Live Activity
-            </h3>
-            {data && (
-              <span className="text-[10px] text-muted-foreground">
-                {data.hasRealData ? "real data · redacted" : "demo data"}
-              </span>
-            )}
+          <div className="space-y-1.5">
+            {data.agents.map((agent) => {
+              const isRunning = agent.status === "running";
+              const isError = agent.status === "error";
+              return (
+                <div key={agent.name} className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className={`text-[10px] shrink-0 ${
+                        isRunning
+                          ? "text-primary animate-pulse"
+                          : isError
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {isRunning ? "●" : isError ? "✕" : "○"}
+                    </span>
+                    <span
+                      className={`text-[10px] truncate ${
+                        isRunning ? "text-foreground font-semibold" : "text-muted-foreground"
+                      }`}
+                    >
+                      {agent.displayName}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground/60 shrink-0 tabular-nums">
+                    {agent.tasksCompleted > 0
+                      ? `${agent.tasksCompleted}✓`
+                      : agent.lastRunAt
+                        ? formatRelativeTime(agent.lastRunAt)
+                        : "—"}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-          {data ? <ActivityFeed tasks={data.tasks} /> : <LoadingPulse />}
         </div>
-
-        {/* Column 3: Stats + CTA */}
-        <div className="col-span-3 overflow-y-auto scrollbar-thin p-5 flex flex-col gap-5">
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            All-Time Stats
-          </h3>
-          {data ? <StatsPanel stats={data.stats} /> : <LoadingPulse />}
-
-          <div className="border border-dashed border-border p-5 mt-auto">
-            <p className="text-xs font-bold text-primary mb-1">
-              Your own AI operator.
-            </p>
-            <p className="text-[10px] text-muted-foreground mb-4">
-              100 free credits. No credit card. Starts working in minutes.
-            </p>
-            <Link href="/login">
-              <Button size="sm" className="w-full">
-                Get Started &rarr;
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
-function AgentRoster({ agents }: { agents: PublicAgentStatus[] }) {
-  return (
-    <div className="space-y-2">
-      {agents.map((agent) => {
-        const isRunning = agent.status === "running";
-        const isError = agent.status === "error";
-        return (
-          <div key={agent.name} className="border border-dashed border-border p-3 space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs shrink-0 ${
-                    isRunning
-                      ? "text-primary animate-pulse"
-                      : isError
-                        ? "text-destructive"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {isRunning ? "●" : isError ? "✕" : "○"}
-                </span>
-                <span
-                  className={`text-xs font-semibold ${
-                    isRunning ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {agent.displayName}
-                </span>
-              </div>
-              <span
-                className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${
-                  isRunning
-                    ? "border-primary/40 text-primary bg-primary/5"
-                    : isError
-                      ? "border-destructive/40 text-destructive"
-                      : "border-border text-muted-foreground"
-                }`}
-              >
-                {agent.status}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span>{agent.tasksCompleted} tasks done</span>
-              {agent.lastRunAt && <span>{formatRelativeTime(agent.lastRunAt)}</span>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
+// ---------------------------------------------------------------------------
+// Col 2 — Tasks
+// ---------------------------------------------------------------------------
 const CATEGORY_COLORS: Record<string, string> = {
-  TWITTER: "text-sky-500 border-sky-500/30 bg-sky-500/5",
-  OUTREACH: "text-violet-500 border-violet-500/30 bg-violet-500/5",
-  RESEARCH: "text-amber-500 border-amber-500/30 bg-amber-500/5",
-  ENGINEERING: "text-emerald-500 border-emerald-500/30 bg-emerald-500/5",
+  TWITTER: "text-sky-600 border-sky-500/30 bg-sky-500/5",
+  OUTREACH: "text-violet-600 border-violet-500/30 bg-violet-500/5",
+  RESEARCH: "text-amber-600 border-amber-500/30 bg-amber-500/5",
+  ENGINEERING: "text-emerald-600 border-emerald-500/30 bg-emerald-500/5",
   GROWTH: "text-primary border-primary/30 bg-primary/5",
-  MARKETING: "text-pink-500 border-pink-500/30 bg-pink-500/5",
-  ANALYTICS: "text-orange-500 border-orange-500/30 bg-orange-500/5",
+  MARKETING: "text-pink-600 border-pink-500/30 bg-pink-500/5",
+  ANALYTICS: "text-orange-600 border-orange-500/30 bg-orange-500/5",
   OPERATIONS: "text-muted-foreground border-border",
-  PRODUCT: "text-blue-500 border-blue-500/30 bg-blue-500/5",
+  PRODUCT: "text-blue-600 border-blue-500/30 bg-blue-500/5",
 };
 
-function ActivityFeed({ tasks }: { tasks: PublicTask[] }) {
-  if (tasks.length === 0) {
-    return (
-      <div className="border border-dashed border-border p-8 text-center">
-        <p className="text-xs text-muted-foreground">
-          No recent activity. Agents are warming up...
-        </p>
-        <span className="text-[10px] text-primary animate-pulse block mt-2">
-          Waiting for tasks
-        </span>
-      </div>
-    );
-  }
+function TasksColumn({
+  tasks,
+  stats,
+}: {
+  tasks: PublicTask[];
+  stats?: PublicLiveData["stats"];
+}) {
+  const runningTasks = tasks.filter((t) => t.status === "IN_PROGRESS");
+  const completedTasks = tasks.filter((t) => t.status !== "IN_PROGRESS");
 
-  return (
-    <div className="space-y-2">
-      {tasks.map((task) => {
-        const isRunning = task.status === "IN_PROGRESS";
-        const catColor = CATEGORY_COLORS[task.category] ?? "text-muted-foreground border-border";
-        return (
-          <div
-            key={task.id}
-            className={`border border-dashed p-3 space-y-2 transition-colors ${
-              isRunning ? "border-primary/40 bg-primary/5" : "border-border"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-xs font-semibold leading-snug flex-1">{task.title}</p>
-              <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border shrink-0 ${catColor}`}>
-                {task.category}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-              {isRunning ? (
-                <span className="text-primary font-semibold animate-pulse">● Running</span>
-              ) : (
-                <span className={task.status === "FAILED" ? "text-destructive" : ""}>
-                  {task.status === "COMPLETED" ? "✓" : "✕"} {task.status.toLowerCase()}
-                </span>
-              )}
-              {task.agentName && <span>· {task.agentName} agent</span>}
-              <span>· {task.projectSlug}</span>
-              <span className="ml-auto">{formatRelativeTime(task.updatedAt)}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function StatsPanel({ stats }: { stats: PublicLiveData["stats"] }) {
   return (
     <div className="space-y-3">
-      {(
-        [
-          ["Tasks Completed", stats.totalTasksCompleted],
-          ["Emails Sent", stats.emailsSent],
-          ["Tweets Posted", stats.tweetsPosted],
-          ["Active Projects", stats.activeProjects],
-        ] as [string, number][]
-      ).map(([label, value]) => (
-        <div
-          key={label}
-          className="border border-dashed border-border p-3 flex items-center justify-between"
-        >
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-          <span className="text-lg font-bold text-primary tabular-nums">{value.toLocaleString()}</span>
-        </div>
+      <div className="flex items-center justify-between">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          Tasks
+        </h3>
+        {runningTasks.length > 0 && (
+          <span className="text-[10px] text-primary font-mono animate-pulse">
+            {runningTasks.length} running
+          </span>
+        )}
+      </div>
+
+      {/* Running tasks — highlighted */}
+      {runningTasks.map((task) => (
+        <RunningTaskCard key={task.id} task={task} />
       ))}
+
+      {/* Recent completed tasks */}
+      {completedTasks.slice(0, 8).map((task) => (
+        <TaskCard key={task.id} task={task} />
+      ))}
+
+      {tasks.length === 0 && (
+        <div className="border border-dashed border-border p-8 text-center">
+          <p className="text-xs text-muted-foreground">
+            No recent activity. Agents are warming up...
+          </p>
+          <span className="text-[10px] text-primary animate-pulse block mt-2">
+            Waiting for tasks
+          </span>
+        </div>
+      )}
+
+      {stats && stats.tasksLast24h > 0 && (
+        <div className="text-[10px] text-muted-foreground pt-1 border-t border-dashed border-border/50">
+          + {stats.tasksLast24h.toLocaleString()} tasks completed in the past 24h
+        </div>
+      )}
     </div>
   );
 }
 
-function LoadingPulse() {
+function RunningTaskCard({ task }: { task: PublicTask }) {
+  const elapsed = useElapsed(task.updatedAt, true);
+  const catColor = CATEGORY_COLORS[task.category] ?? "text-muted-foreground border-border";
+
   return (
-    <div className="space-y-2">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="border border-dashed border-border p-4 animate-pulse">
-          <div className="h-2 bg-muted rounded w-3/4 mb-2" />
-          <div className="h-2 bg-muted rounded w-1/2" />
-        </div>
-      ))}
+    <div className="border-2 border-primary/40 bg-primary/5 p-4 space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+        <h4 className="font-bold text-sm leading-tight flex-1">{task.title}</h4>
+      </div>
+      {task.description && (
+        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
+          {task.description}
+        </p>
+      )}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${catColor}`}>
+          {task.category}
+        </span>
+        <span className="text-[10px] text-primary font-semibold">
+          Running for {elapsed || "0m 00s"}
+        </span>
+      </div>
     </div>
+  );
+}
+
+function TaskCard({ task }: { task: PublicTask }) {
+  const catColor = CATEGORY_COLORS[task.category] ?? "text-muted-foreground border-border";
+  const isFailed = task.status === "FAILED";
+
+  return (
+    <div className="border border-dashed border-border p-3 space-y-2">
+      <h4 className="font-semibold text-xs leading-tight">{task.title}</h4>
+      {task.description && (
+        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
+          {task.description}
+        </p>
+      )}
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${catColor}`}>
+          {task.category}
+        </span>
+        <span className={isFailed ? "text-destructive" : ""}>
+          {task.status === "COMPLETED" ? "✓" : "✕"} {task.status.toLowerCase()}
+        </span>
+        {task.agentName && <span>· {task.agentName}</span>}
+        <span className="ml-auto">{formatRelativeTime(task.updatedAt)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Col 3 — Twitter + Email
+// ---------------------------------------------------------------------------
+function SocialColumn({
+  tweets,
+  emails,
+  stats,
+}: {
+  tweets: PublicTweet[];
+  emails: PublicEmail[];
+  stats?: PublicLiveData["stats"];
+}) {
+  return (
+    <div className="space-y-5">
+      {/* Twitter */}
+      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        Twitter
+      </h3>
+
+      {tweets.length > 0 ? (
+        <div className="space-y-2">
+          {tweets.map((tweet, i) => (
+            <div key={i} className="border border-dashed border-border p-3 space-y-2">
+              <p className="text-xs leading-relaxed">{tweet.text}</p>
+              <span className="text-[10px] text-muted-foreground">
+                {formatRelativeTime(tweet.postedAt)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="border border-dashed border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            No tweets yet. The AI composes tweets automatically.
+          </p>
+        </div>
+      )}
+
+      {stats && (
+        <div className="text-[10px] text-muted-foreground">
+          + {stats.tweetsPosted.toLocaleString()} tweets posted all-time
+        </div>
+      )}
+
+      <div className="border-t border-dashed border-border" />
+
+      {/* Email */}
+      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        Email
+      </h3>
+
+      {emails.length > 0 ? (
+        <div className="space-y-0">
+          {emails.map((email, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-2 text-xs py-2.5 border-b border-dashed border-border/50 last:border-0"
+            >
+              <span className="text-primary font-bold shrink-0 mt-0.5">&rarr;</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{email.subject}</p>
+                <p className="text-[10px] text-muted-foreground truncate">To: {email.to}</p>
+              </div>
+              <span className="text-[10px] text-muted-foreground shrink-0">
+                {formatRelativeTime(email.sentAt)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="border border-dashed border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            No emails sent yet. The AI finds leads and sends outreach.
+          </p>
+        </div>
+      )}
+
+      {stats && (
+        <div className="text-[10px] text-muted-foreground">
+          + {stats.emailsSent.toLocaleString()} emails sent all-time
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Col 4 — CTA + Live Chat style
+// ---------------------------------------------------------------------------
+function CtaColumn({ agents }: { agents: PublicAgentStatus[] }) {
+  const totalTasks = agents.reduce((sum, a) => sum + a.tasksCompleted, 0);
+
+  return (
+    <>
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-4 space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-primary mb-2">Live Dashboard</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
+            Watch OneraOS run marketing, outreach, research, and engineering tasks
+            autonomously for real companies — right now.
+          </p>
+        </div>
+
+        {totalTasks > 0 && (
+          <div className="border border-dashed border-border p-4 w-full max-w-xs">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              Total tasks by all agents
+            </p>
+            <p className="text-3xl font-bold text-primary tabular-nums">
+              {totalTasks.toLocaleString()}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="border border-dashed border-border p-5 mt-6">
+        <p className="text-xs font-bold text-primary mb-1">
+          Your own AI operator.
+        </p>
+        <p className="text-[10px] text-muted-foreground mb-4 leading-relaxed">
+          100 free credits. No credit card required. Set up your company and OneraOS
+          starts working in minutes — planning tasks, sending emails, posting tweets,
+          and writing reports.
+        </p>
+        <Link href="/login">
+          <Button size="sm" className="w-full">
+            Get Started &rarr;
+          </Button>
+        </Link>
+      </div>
+    </>
   );
 }

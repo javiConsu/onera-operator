@@ -238,19 +238,42 @@ export interface PublicAgentStatus {
 export interface PublicTask {
   id: string;
   title: string;
+  description: string | null;
   category: string;
   status: string;
   agentName: string | null;
   updatedAt: string;
   completedAt: string | null;
+  createdAt: string;
   projectSlug: string;
+}
+
+export interface PublicTweet {
+  text: string;
+  postedAt: string;
+}
+
+export interface PublicEmail {
+  subject: string;
+  to: string;
+  sentAt: string;
+}
+
+export interface TerminalLine {
+  text: string;
+  status: string;
+  timestamp: string;
 }
 
 export interface PublicLiveData {
   agents: PublicAgentStatus[];
   tasks: PublicTask[];
+  tweets: PublicTweet[];
+  emails: PublicEmail[];
+  terminalLines: TerminalLine[];
   stats: {
     totalTasksCompleted: number;
+    tasksLast24h: number;
     emailsSent: number;
     tweetsPosted: number;
     activeProjects: number;

@@ -34,7 +34,7 @@ export function projectSlug(projectId: string): string {
 }
 
 export async function getPublicLiveData() {
-  const [agents, recentTasks, stats] = await Promise.all([
+  const [agents, recentTasks, recentLogs, stats] = await Promise.all([
     prisma.agentStatus.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -45,49 +45,120 @@ export async function getPublicLiveData() {
         tasksCompleted: true,
       },
     }),
+
     prisma.task.findMany({
       where: {
         status: { in: [TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.FAILED] },
       },
       orderBy: { updatedAt: "desc" },
-      take: 20,
+      take: 30,
       select: {
         id: true,
         title: true,
+        description: true,
         category: true,
         status: true,
         agentName: true,
+        result: true,
         updatedAt: true,
         completedAt: true,
+        createdAt: true,
         projectId: true,
       },
     }),
+
+    // Recent execution logs for the terminal feed
+    prisma.executionLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        agentName: true,
+        action: true,
+        status: true,
+        createdAt: true,
+      },
+    }),
+
     Promise.all([
       prisma.task.count({ where: { status: TaskStatus.COMPLETED } }),
       prisma.task.count({ where: { agentName: "outreach", status: TaskStatus.COMPLETED } }),
       prisma.task.count({ where: { agentName: "twitter", status: TaskStatus.COMPLETED } }),
       prisma.project.count(),
+      // Tasks completed in last 24h
+      prisma.task.count({
+        where: {
+          status: TaskStatus.COMPLETED,
+          completedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
     ]),
   ]);
 
-  const [totalTasks, emailTasks, tweetTasks, totalProjects] = stats;
+  const [totalTasks, emailTasks, tweetTasks, totalProjects, tasksLast24h] = stats;
+
+  // Extract tweets and emails from completed task results
+  const tweets: { text: string; postedAt: string }[] = [];
+  const emails: { subject: string; to: string; sentAt: string }[] = [];
+
+  for (const task of recentTasks) {
+    if (!task.result) continue;
+    try {
+      const result = JSON.parse(task.result) as Record<string, unknown>;
+      const toolResults = (result.toolResults || []) as Array<{
+        tool: string;
+        result?: Record<string, unknown>;
+      }>;
+
+      for (const tr of toolResults) {
+        if (tr.tool === "scheduleTweet" && tr.result?.tweet) {
+          tweets.push({
+            text: redactText(String(tr.result.tweet)),
+            postedAt: String(tr.result.scheduledTime || task.completedAt?.toISOString() || task.createdAt.toISOString()),
+          });
+        }
+        if (tr.tool === "sendEmail" && tr.result) {
+          emails.push({
+            subject: redactText(String(tr.result.subject || "Outreach email")),
+            to: redactText(String(tr.result.to || tr.result.recipient || "unknown")),
+            sentAt: String(tr.result.sentAt || task.completedAt?.toISOString() || task.createdAt.toISOString()),
+          });
+        }
+      }
+    } catch {
+      // skip
+    }
+  }
 
   const safeTasks = recentTasks.map((t) => ({
     id: t.id,
     title: redactText(t.title),
+    description: t.description ? redactText(t.description).slice(0, 200) : null,
     category: t.category,
     status: t.status,
     agentName: t.agentName,
     updatedAt: t.updatedAt.toISOString(),
     completedAt: t.completedAt?.toISOString() ?? null,
+    createdAt: t.createdAt.toISOString(),
     projectSlug: projectSlug(t.projectId),
+  }));
+
+  // Terminal-style log lines from execution logs
+  const terminalLines = recentLogs.map((log) => ({
+    text: `[${log.agentName}] ${redactText(log.action)}`,
+    status: log.status,
+    timestamp: log.createdAt.toISOString(),
   }));
 
   return {
     agents,
     tasks: safeTasks,
+    tweets: tweets.slice(0, 10),
+    emails: emails.slice(0, 10),
+    terminalLines,
     stats: {
       totalTasksCompleted: totalTasks,
+      tasksLast24h,
       emailsSent: emailTasks,
       tweetsPosted: tweetTasks,
       activeProjects: totalProjects,
