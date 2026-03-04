@@ -1,5 +1,5 @@
 # =============================================================================
-# Deploy Frontend → Azure Web App (onera-prod-frontend)
+# Deploy Frontend → Azure Web App (onera-orchd-frontend)
 # Builds Next.js standalone output, zips it, deploys via publish profile
 # =============================================================================
 name: Deploy Frontend
@@ -57,13 +57,8 @@ jobs:
       - name: Package standalone output
         run: |
           STANDALONE=packages/frontend/.next/standalone
-          echo "=== Standalone root ==="
-          ls "$STANDALONE"
-          echo "=== Checking for server.js ==="
-          find "$STANDALONE" -name "server.js" -maxdepth 4
 
-          # Copy static assets into the right place inside standalone
-          # In a monorepo the path mirrors the repo structure
+          # Copy static assets (monorepo: path mirrors repo structure)
           STATIC_DEST="$STANDALONE/packages/frontend/.next/static"
           mkdir -p "$STATIC_DEST"
           cp -r packages/frontend/.next/static/. "$STATIC_DEST/"
@@ -75,12 +70,12 @@ jobs:
           fi
 
           cd "$STANDALONE"
-          zip -r ${{ github.workspace }}/frontend-deploy.zip . -x "*.map" -q
+          zip -r "${{ github.workspace }}/frontend-deploy.zip" . -x "*.map" -q
           echo "Package size: $(du -sh ${{ github.workspace }}/frontend-deploy.zip | cut -f1)"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: onera-prod-frontend
+          app-name: onera-orchd-frontend
           publish-profile: ${{ secrets.AZURE_WEBAPP_FRONTEND_PUBLISH_PROFILE }}
-          package: frontend-deploy.zip
+          package: ${{ github.workspace }}/frontend-deploy.zip
