@@ -8,6 +8,7 @@ import { agentRoutes } from "./routes/agents.js";
 import { reportRoutes } from "./routes/reports.js";
 import { chatRoutes } from "./routes/chat.js";
 import { loopRoutes } from "./routes/loop.js";
+import { userRoutes } from "./routes/users.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -31,6 +32,7 @@ export async function buildServer() {
   await app.register(reportRoutes);
   await app.register(chatRoutes);
   await app.register(loopRoutes);
+  await app.register(userRoutes);
 
   return app;
 }

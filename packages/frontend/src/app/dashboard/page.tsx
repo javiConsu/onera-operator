@@ -7,6 +7,7 @@ import { api, type Project } from "@/lib/api-client";
 import { CompanyPanel } from "@/components/dashboard/company-panel";
 import { TasksPanel } from "@/components/dashboard/tasks-panel";
 import { TwitterPanel } from "@/components/dashboard/twitter-panel";
+import { EngineerPanel } from "@/components/dashboard/engineer-panel";
 import { ReportPanel } from "@/components/dashboard/report-panel";
 import { ChatBar } from "@/components/dashboard/chat-bar";
 import { Button } from "@/components/ui/button";
@@ -15,22 +16,29 @@ export default function DashboardPage() {
   const { user } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [credits, setCredits] = useState<number>(100);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const userId = user?.id;
-    api.projects
-      .list(userId)
-      .then((p) => {
+    if (!userId) return;
+
+    Promise.all([
+      api.projects.list(userId),
+      api.users.credits(userId).catch(() => ({ credits: 100 })),
+    ])
+      .then(([p, creditsData]) => {
         setProjects(p);
         if (p.length > 0) {
           setSelectedProject(p[0]!);
         }
+        setCredits(creditsData.credits);
       })
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user?.id]);
 
   if (loading) {
     return (
@@ -38,6 +46,28 @@ export default function DashboardPage() {
         <span className="text-xs text-muted-foreground uppercase tracking-wider animate-pulse">
           Loading dashboard...
         </span>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-5.5rem)] gap-4">
+        <div className="border border-destructive/50 bg-destructive/5 p-6 text-center max-w-sm">
+          <p className="text-xs text-destructive font-semibold uppercase tracking-wider mb-2">
+            Failed to load dashboard
+          </p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Could not connect to the backend. Check that the server is running.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -61,7 +91,31 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-5.5rem)]">
-      {/* 4-column dashboard grid */}
+      {/* Project selector — shown when user has multiple projects */}
+      {projects.length > 1 && (
+        <div className="border-b border-dashed border-border px-4 py-2 flex items-center gap-3 shrink-0">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Project:
+          </span>
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProject(p)}
+                className={`text-xs px-3 py-1 border transition-colors shrink-0 ${
+                  selectedProject?.id === p.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary"
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5-column dashboard grid */}
       <div className="flex-1 overflow-hidden">
         <div className="grid grid-cols-12 h-full">
           {/* Column 1: Company status */}
@@ -69,28 +123,37 @@ export default function DashboardPage() {
             <CompanyPanel
               projectName={selectedProject?.name || ""}
               projectId={selectedProject?.id}
-              credits={100}
+              credits={credits}
+              projectWebsite={selectedProject?.website}
+              projectDescription={selectedProject?.description}
             />
           </div>
 
           {/* Column 2: Tasks */}
           <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <TasksPanel projectId={selectedProject.id} />
+              <TasksPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
 
           {/* Column 3: Twitter + Email */}
-          <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
+          <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <TwitterPanel projectId={selectedProject.id} />
+              <TwitterPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
 
-          {/* Column 4: Daily Report */}
-          <div className="col-span-4 overflow-y-auto scrollbar-thin p-4">
+          {/* Column 4: Engineering */}
+          <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <ReportPanel projectId={selectedProject.id} />
+              <EngineerPanel key={selectedProject.id} projectId={selectedProject.id} />
+            )}
+          </div>
+
+          {/* Column 5: Daily Report */}
+          <div className="col-span-3 overflow-y-auto scrollbar-thin p-4">
+            {selectedProject && (
+              <ReportPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
         </div>

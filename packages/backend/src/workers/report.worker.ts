@@ -10,7 +10,7 @@ import {
   getTaskMetrics,
   listTasks,
 } from "../services/task.service.js";
-import { createDailyReport } from "../services/report.service.js";
+import { createDailyReport, sendDailyDigestEmail } from "../services/report.service.js";
 import { upsertAgentStatus } from "../services/execution.service.js";
 
 /**
@@ -19,8 +19,9 @@ import { upsertAgentStatus } from "../services/execution.service.js";
  * Generates daily reports for all projects.
  */
 export function startReportWorker(): Worker<SchedulerJob> {
+  // Use dedicated report-scheduler queue to avoid competing with scheduler worker
   const worker = new Worker<SchedulerJob>(
-    "agent-scheduler",
+    "report-scheduler",
     async (job) => {
       if (job.data.type !== "daily-report") return;
 
@@ -107,7 +108,24 @@ export function startReportWorker(): Worker<SchedulerJob> {
                 priority: t.priority,
               }))
             ),
-            metrics: JSON.stringify(metrics),
+            metrics: JSON.stringify({
+              ...metrics,
+              highlights: report.highlights,
+              blockers: report.blockers,
+              nextSteps: report.nextSteps,
+            }),
+          });
+
+          // Send daily digest email to the project owner (Polsia-style morning email)
+          await sendDailyDigestEmail({
+            projectId: project.id,
+            projectName: project.name,
+            reportContent: report.content,
+            highlights: report.highlights || [],
+            nextSteps: report.nextSteps || [],
+            completedCount: metrics.completed,
+            pendingCount: metrics.pending,
+            date: today!,
           });
 
           console.log(

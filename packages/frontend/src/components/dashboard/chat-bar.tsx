@@ -23,6 +23,7 @@ export function ChatBar({ projectId }: ChatBarProps) {
   } = useChat({
     api: "/api/chat",
     body: { projectId },
+    streamProtocol: "text",
   });
 
   const hasMessages = messages.length > 0;

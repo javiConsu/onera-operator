@@ -91,6 +91,11 @@ export const api = {
       }),
   },
 
+  users: {
+    credits: (userId: string) =>
+      fetchApi<{ credits: number }>(`/api/users/${encodeURIComponent(userId)}/credits`),
+  },
+
   loop: {
     trigger: (projectId?: string) =>
       fetchApi<{ message: string }>("/api/loop/trigger", {

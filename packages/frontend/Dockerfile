@@ -12,6 +12,7 @@ RUN pnpm install --frozen-lockfile
 # Build
 FROM base AS builder
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/packages/frontend/node_modules ./packages/frontend/node_modules
@@ -35,4 +36,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/.next/static ./
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "packages/frontend/server.js"]
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "server.js"]

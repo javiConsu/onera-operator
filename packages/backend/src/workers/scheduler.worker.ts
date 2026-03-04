@@ -33,7 +33,7 @@ export function startSchedulerWorker(): Worker<SchedulerJob> {
       if (type === "agent-loop") {
         await runAgentLoop(projectId);
       }
-      // daily-report is handled by report.worker.ts
+      // daily-report jobs go to the report-scheduler queue (report.worker.ts)
     },
     {
       connection: getRedisConnection(),
@@ -97,10 +97,17 @@ async function runAgentLoop(specificProjectId?: string) {
       const completedWorkSummary =
         completedTasks.length > 0
           ? completedTasks
-              .map(
-                (t) =>
-                  `- ${t.title}: ${t.result ? JSON.parse(t.result).text?.substring(0, 100) || "completed" : "completed"}`
-              )
+              .map((t) => {
+                let summary = "completed";
+                if (t.result) {
+                  try {
+                    summary = JSON.parse(t.result).text?.substring(0, 100) || "completed";
+                  } catch {
+                    summary = t.result.substring(0, 100);
+                  }
+                }
+                return `- ${t.title}: ${summary}`;
+              })
               .join("\n")
           : "No completed work yet.";
 

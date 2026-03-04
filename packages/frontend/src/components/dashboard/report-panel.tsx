@@ -23,6 +23,11 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
     }
   }, [projectId]);
 
+  // Reset loading state when project changes (before new data arrives)
+  useEffect(() => {
+    setLoading(true);
+  }, [projectId]);
+
   useEffect(() => {
     fetchReports();
     // Poll every 15 seconds (reports change less often)
@@ -71,9 +76,26 @@ function parseJsonField(value: string | null): string[] {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.map(String);
-    if (typeof parsed === "object") {
-      return Object.values(parsed).map(String);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => {
+        if (typeof item === "string") return item;
+        if (typeof item === "object" && item !== null) {
+          // Handle {title, category} objects from report worker
+          const obj = item as Record<string, unknown>;
+          return (obj.title as string) || (obj.name as string) || JSON.stringify(item);
+        }
+        return String(item);
+      });
+    }
+    if (typeof parsed === "object" && parsed !== null) {
+      return Object.values(parsed as Record<string, unknown>).map((v) => {
+        if (typeof v === "string") return v;
+        if (typeof v === "object" && v !== null) {
+          const obj = v as Record<string, unknown>;
+          return (obj.title as string) || JSON.stringify(v);
+        }
+        return String(v);
+      });
     }
     return [String(parsed)];
   } catch {
@@ -84,9 +106,35 @@ function parseJsonField(value: string | null): string[] {
   }
 }
 
+function parseMetrics(value: string | null): {
+  highlights: string[];
+  blockers: string[];
+  nextSteps: string[];
+} {
+  const empty = { highlights: [], blockers: [], nextSteps: [] };
+  if (!value) return empty;
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return {
+      highlights: Array.isArray(parsed.highlights)
+        ? (parsed.highlights as string[])
+        : [],
+      blockers: Array.isArray(parsed.blockers)
+        ? (parsed.blockers as string[])
+        : [],
+      nextSteps: Array.isArray(parsed.nextSteps)
+        ? (parsed.nextSteps as string[])
+        : [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
 function ReportEntry({ report }: { report: DailyReport }) {
   const completedItems = parseJsonField(report.tasksCompleted);
   const plannedItems = parseJsonField(report.tasksPlanned);
+  const { highlights, blockers, nextSteps } = parseMetrics(report.metrics);
 
   return (
     <div className="relative">
@@ -113,10 +161,40 @@ function ReportEntry({ report }: { report: DailyReport }) {
                   <span className="text-primary font-bold shrink-0">
                     &check;
                   </span>
-                  <span className="leading-relaxed">
-                    <span className="font-semibold">{item}</span>
-                  </span>
+                  <span className="leading-relaxed font-semibold">{item}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Highlights */}
+        {highlights.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Highlights:
+            </p>
+            <div className="space-y-1">
+              {highlights.map((h, i) => (
+                <p key={i} className="text-xs leading-relaxed">
+                  &bull; {h}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blockers */}
+        {blockers.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] uppercase tracking-wider text-destructive/70 font-semibold mb-2">
+              Blockers:
+            </p>
+            <div className="space-y-1">
+              {blockers.map((b, i) => (
+                <p key={i} className="text-xs leading-relaxed text-destructive/80">
+                  &bull; {b}
+                </p>
               ))}
             </div>
           </div>
@@ -129,8 +207,24 @@ function ReportEntry({ report }: { report: DailyReport }) {
           </div>
         )}
 
-        {/* Tomorrow section */}
-        {plannedItems.length > 0 && (
+        {/* Next steps */}
+        {nextSteps.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Next steps:
+            </p>
+            <div className="space-y-1">
+              {nextSteps.map((s, i) => (
+                <p key={i} className="text-xs leading-relaxed">
+                  {i + 1}. {s}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tomorrow section (from tasksPlanned) */}
+        {plannedItems.length > 0 && nextSteps.length === 0 && (
           <div>
             <p className="text-xs font-bold mb-1">Tomorrow:</p>
             <p className="text-xs text-muted-foreground leading-relaxed">

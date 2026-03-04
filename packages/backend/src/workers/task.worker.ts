@@ -41,21 +41,25 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         lastError: null,
       });
 
-      // Check and deduct credits before executing
-      const userId = await getProjectOwner(projectId);
-      const taskCredits = await getTaskCredits(taskId);
-      if (userId) {
-        const deducted = await deductCredits(userId, taskCredits);
-        if (!deducted) {
-          console.log(
-            `[task-worker] Insufficient credits for task "${taskTitle}"`
-          );
-          await updateTaskStatus(
-            taskId,
-            "FAILED",
-            JSON.stringify({ error: "Insufficient credits" })
-          );
-          return;
+      // Check and deduct credits — only on first attempt to avoid double-charging on retry
+      if (job.attemptsMade === 0) {
+        const userId = await getProjectOwner(projectId);
+        const taskCredits = await getTaskCredits(taskId);
+        if (userId) {
+          const deducted = await deductCredits(userId, taskCredits);
+          if (!deducted) {
+            console.log(
+              `[task-worker] Insufficient credits for task "${taskTitle}"`
+            );
+            await updateTaskStatus(
+              taskId,
+              "FAILED",
+              JSON.stringify({ error: "Insufficient credits" })
+            );
+            // Reset agent status — was set to "running" above
+            await upsertAgentStatus(agentName, displayName, { status: "idle" });
+            return;
+          }
         }
       }
 

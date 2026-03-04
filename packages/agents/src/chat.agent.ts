@@ -10,6 +10,8 @@ import {
   webSearch,
   webScraper,
   summarizeContent,
+  researchCompanyUrl,
+  executeCode,
 } from "@onera/tools";
 
 /**
@@ -28,7 +30,7 @@ export function streamChatAgent(
     model,
     system:
       "You are Onera Operator, an AI COO for startups. " +
-      "You help founders with growth, marketing, outreach, research, and operations. " +
+      "You help founders with growth, marketing, outreach, research, engineering, and operations. " +
       "You have access to various tools to execute tasks directly. " +
       "Be concise, actionable, and proactive. " +
       "When a user asks you to do something, use the appropriate tool. " +
@@ -45,6 +47,8 @@ export function streamChatAgent(
       webSearch,
       webScraper,
       summarizeContent,
+      researchCompanyUrl,
+      executeCode,
     },
     maxSteps: 10,
   });

@@ -29,6 +29,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # Crawl4AI — LLM-friendly deep web crawler with JS rendering
+  # Powers the webScraper tool for dynamic sites and anti-bot bypass
+  # Docs: https://docs.crawl4ai.com/
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    ports:
+      - "11235:11235"
+    environment:
+      MAX_CONCURRENT_TASKS: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11235/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   backend:
     build:
       context: .
@@ -42,7 +58,7 @@ services:
       DATABASE_URL: postgresql://onera:onera@postgres:5432/onera
       REDIS_URL: redis://redis:6379
       BACKEND_PORT: "3001"
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       AI_PROVIDER: ${AI_PROVIDER:-openai}
       AI_MODEL: ${AI_MODEL:-gpt-4o}
       AI_API_KEY: ${AI_API_KEY:-}
@@ -51,6 +67,19 @@ services:
       AI_AZURE_DEPLOYMENT_NAME: ${AI_AZURE_DEPLOYMENT_NAME:-}
       AGENT_LOOP_INTERVAL_CRON: ${AGENT_LOOP_INTERVAL_CRON:-0 */4 * * *}
       DAILY_REPORT_CRON: ${DAILY_REPORT_CRON:-0 18 * * *}
+      EXA_API_KEY: ${EXA_API_KEY:-}
+      # Email (Resend)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      # Deep web crawling (Crawl4AI)
+      CRAWL4AI_API_URL: http://crawl4ai:11235
+      # Sandboxed code execution (E2B)
+      E2B_API_KEY: ${E2B_API_KEY:-}
+      # Twitter/X
+      TWITTER_API_KEY: ${TWITTER_API_KEY:-}
+      TWITTER_API_SECRET: ${TWITTER_API_SECRET:-}
+      TWITTER_ACCESS_TOKEN: ${TWITTER_ACCESS_TOKEN:-}
+      TWITTER_ACCESS_TOKEN_SECRET: ${TWITTER_ACCESS_TOKEN_SECRET:-}
     ports:
       - "3001:3001"
 
@@ -62,6 +91,11 @@ services:
       - backend
     environment:
       NEXT_PUBLIC_BACKEND_URL: http://backend:3001
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /login
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /new
     ports:
       - "3000:3000"
 
