@@ -1,6 +1,5 @@
 import { Worker } from "bullmq";
 import { getRedisConnection } from "../queue/connection.js";
-import { getReportQueue } from "../queue/scheduler.queue.js";
 import type { SchedulerJob } from "../queue/scheduler.queue.js";
 import { prisma } from "@onera/database";
 import { runReportAgent } from "@onera/agents";
@@ -21,7 +20,6 @@ import { upsertAgentStatus } from "../services/execution.service.js";
  */
 export function startReportWorker(): Worker<SchedulerJob> {
   // Use dedicated report-scheduler queue to avoid competing with scheduler worker
-  void getReportQueue(); // ensure queue is initialized
   const worker = new Worker<SchedulerJob>(
     "report-scheduler",
     async (job) => {
