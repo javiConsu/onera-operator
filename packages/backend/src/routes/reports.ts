@@ -26,10 +26,11 @@ export async function reportRoutes(app: FastifyInstance) {
       if (!projectId) {
         return reply.code(400).send({ error: "projectId is required" });
       }
-      const reports = await listReports(
-        projectId,
-        limit ? parseInt(limit, 10) : 30
-      );
+      const parsedLimit = limit ? parseInt(limit, 10) : 30;
+      if (Number.isNaN(parsedLimit)) {
+        return reply.code(400).send({ error: "limit must be a number" });
+      }
+      const reports = await listReports(projectId, parsedLimit);
       return reply.send(reports);
     }
   );
