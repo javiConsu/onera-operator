@@ -35,8 +35,8 @@ export async function runPlannerAgent(input: PlannerInput) {
       "\n- Don't repeat recently completed work" +
       "\n- Balance between quick wins and strategic initiatives" +
       "\n\nIMPORTANT constraints:" +
-      "\n- NEVER create tasks to 'set up social media accounts' or 'create profiles' — we already have our own @oneraos Twitter account" +
-      "\n- Twitter tasks should ONLY be about composing and posting tweets about the user's company from the @oneraos account" +
+      "\n- NEVER create tasks to 'set up social media accounts' or 'create profiles' — assume the startup already has social media accounts configured" +
+      "\n- Twitter tasks should ONLY be about composing and posting tweets about the startup's product, updates, and insights" +
       "\n- NEVER suggest creating new accounts, registering domains, or setting up infrastructure" +
       "\n- Focus on content creation, research, outreach emails, competitive analysis, and engineering tasks" +
       "\n- Engineering tasks (agentName: engineer) can include: data analysis scripts, automation, web scraping, API integrations, analytics scripts" +

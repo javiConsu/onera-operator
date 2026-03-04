@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, type TaskMetrics, type AgentStatus, type Project } from "@/lib/api-client";
@@ -97,9 +98,20 @@ export function CompanyPanel({
     <div className="space-y-5">
       {/* Company name and details */}
       <div>
-        <h2 className="text-lg font-bold text-primary tracking-tight">
-          {projectName}
-        </h2>
+        <div className="flex items-start justify-between gap-1">
+          <h2 className="text-lg font-bold text-primary tracking-tight">
+            {projectName}
+          </h2>
+          {projectId && (
+            <Link
+              href={`/projects/${projectId}`}
+              className="text-[9px] text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider shrink-0 mt-1"
+              title="Project Settings"
+            >
+              ⚙ settings
+            </Link>
+          )}
+        </div>
         {projectDescription && (
           <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed line-clamp-3">
             {projectDescription}
