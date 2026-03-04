@@ -10,6 +10,7 @@ import {
   webSearch,
   webScraper,
   summarizeContent,
+  researchCompanyUrl,
 } from "@onera/tools";
 
 /**
@@ -45,6 +46,7 @@ export function streamChatAgent(
       webSearch,
       webScraper,
       summarizeContent,
+      researchCompanyUrl,
     },
     maxSteps: 10,
   });
