@@ -8,6 +8,8 @@ export const taskCategorySchema = z.enum([
   "ANALYTICS",
   "OPERATIONS",
   "RESEARCH",
+  "ENGINEERING",
+  "TWITTER",
 ]);
 
 export const taskPrioritySchema = z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);

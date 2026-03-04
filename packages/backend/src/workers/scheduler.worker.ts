@@ -33,7 +33,7 @@ export function startSchedulerWorker(): Worker<SchedulerJob> {
       if (type === "agent-loop") {
         await runAgentLoop(projectId);
       }
-      // daily-report is handled by report.worker.ts
+      // daily-report jobs go to the report-scheduler queue (report.worker.ts)
     },
     {
       connection: getRedisConnection(),
