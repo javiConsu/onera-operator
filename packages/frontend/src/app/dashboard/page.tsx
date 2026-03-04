@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [credits, setCredits] = useState<number>(100);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function DashboardPage() {
         }
         setCredits(creditsData.credits);
       })
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -44,6 +45,28 @@ export default function DashboardPage() {
         <span className="text-xs text-muted-foreground uppercase tracking-wider animate-pulse">
           Loading dashboard...
         </span>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-5.5rem)] gap-4">
+        <div className="border border-destructive/50 bg-destructive/5 p-6 text-center max-w-sm">
+          <p className="text-xs text-destructive font-semibold uppercase tracking-wider mb-2">
+            Failed to load dashboard
+          </p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Could not connect to the backend. Check that the server is running.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -108,21 +131,21 @@ export default function DashboardPage() {
           {/* Column 2: Tasks */}
           <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <TasksPanel projectId={selectedProject.id} />
+              <TasksPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
 
           {/* Column 3: Twitter + Email */}
           <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <TwitterPanel projectId={selectedProject.id} />
+              <TwitterPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
 
           {/* Column 4: Daily Report */}
           <div className="col-span-4 overflow-y-auto scrollbar-thin p-4">
             {selectedProject && (
-              <ReportPanel projectId={selectedProject.id} />
+              <ReportPanel key={selectedProject.id} projectId={selectedProject.id} />
             )}
           </div>
         </div>

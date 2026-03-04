@@ -7,16 +7,25 @@ export async function createDailyReport(data: {
   tasksPlanned?: string;
   metrics?: string;
 }) {
-  // Calculate day number since project creation
+  // Calculate day number since project creation using calendar-date arithmetic
   const project = await prisma.project.findUnique({
     where: { id: data.projectId },
     select: { createdAt: true },
   });
 
-  const createdAt = project?.createdAt ?? new Date();
-  const now = new Date();
-  const diffMs = now.getTime() - createdAt.getTime();
-  const day = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1);
+  if (!project) {
+    throw new Error(`Project not found: ${data.projectId}`);
+  }
+
+  // Compare calendar dates to avoid time-of-day sensitivity
+  const createdDate = new Date(project.createdAt);
+  createdDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor(
+    (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const day = Math.max(1, diffDays + 1);
 
   return prisma.dailyReport.create({
     data: { ...data, day },

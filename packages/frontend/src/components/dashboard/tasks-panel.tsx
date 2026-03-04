@@ -25,6 +25,11 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
     }
   }, [projectId]);
 
+  // Reset loading state when project changes (before new data arrives)
+  useEffect(() => {
+    setLoading(true);
+  }, [projectId]);
+
   useEffect(() => {
     fetchTasks();
     // Poll every 5 seconds for live updates

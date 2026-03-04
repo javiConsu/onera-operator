@@ -23,6 +23,11 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
     }
   }, [projectId]);
 
+  // Reset loading state when project changes (before new data arrives)
+  useEffect(() => {
+    setLoading(true);
+  }, [projectId]);
+
   useEffect(() => {
     fetchReports();
     // Poll every 15 seconds (reports change less often)
