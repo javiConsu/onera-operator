@@ -64,6 +64,7 @@ export async function ensureUser(data: {
       credits: 0, // 0 until card added
     },
     update: {
+      email: data.email,
       name: data.name,
       image: data.image,
     },
