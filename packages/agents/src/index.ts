@@ -23,4 +23,5 @@ export {
   AGENT_DISPLAY_NAMES,
   type AgentExecutionInput,
   type AgentExecutionResult,
+  type StepEvent,
 } from "./registry.js";

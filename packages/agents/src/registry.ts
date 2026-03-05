@@ -3,9 +3,16 @@ import { runOutreachAgent, type OutreachAgentInput } from "./outreach.agent.js";
 import { runResearchAgent, type ResearchAgentInput } from "./research.agent.js";
 import { runEngineerAgent, type EngineerAgentInput } from "./engineer.agent.js";
 
+export type StepEvent = {
+  type: "thinking" | "tool_call" | "tool_result" | "text";
+  message: string;
+  data?: unknown;
+};
+
 export type AgentExecutionInput = {
   taskDescription: string;
   projectContext: string;
+  onStep?: (event: StepEvent) => void;
 };
 
 export type AgentExecutionResult = {

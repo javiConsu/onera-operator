@@ -17,6 +17,7 @@ import {
   ACTION_CREDITS,
 } from "../services/billing.service.js";
 import { getExecutionAgent, AGENT_DISPLAY_NAMES } from "@onera/agents";
+import { publishAgentEvent } from "../services/activity.service.js";
 
 /**
  * Task Execution Worker
@@ -93,6 +94,16 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
 
       const startTime = Date.now();
 
+      // Publish: task started
+      publishAgentEvent({
+        type: "started",
+        agentName,
+        taskId,
+        taskTitle,
+        projectId,
+        message: `${displayName} starting: ${taskTitle}`,
+      });
+
       try {
         // Get the agent executor
         const executor = getExecutionAgent(agentName);
@@ -103,10 +114,24 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         // Build project context for the agent
         const projectContext = await buildProjectContext(projectId);
 
-        // Run the agent
+        // Run the agent with step-level event publishing
         const result = await executor({
           taskDescription,
           projectContext,
+          onStep: (stepEvent) => {
+            publishAgentEvent({
+              type: stepEvent.type === "thinking" ? "thinking"
+                : stepEvent.type === "tool_call" ? "tool_call"
+                : stepEvent.type === "tool_result" ? "tool_result"
+                : "step",
+              agentName,
+              taskId,
+              taskTitle,
+              projectId,
+              message: stepEvent.message,
+              data: stepEvent.data,
+            });
+          },
         });
 
         const duration = Date.now() - startTime;
@@ -144,6 +169,17 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         });
         await incrementAgentTaskCount(agentName);
 
+        // Publish: task completed
+        publishAgentEvent({
+          type: "completed",
+          agentName,
+          taskId,
+          taskTitle,
+          projectId,
+          message: `${displayName} completed: ${taskTitle}`,
+          data: { duration, text: result.text?.slice(0, 300) },
+        });
+
         console.log(
           `[task-worker] Completed task "${taskTitle}" in ${duration}ms`
         );
@@ -175,6 +211,17 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
           status: "error",
           lastRunAt: new Date(),
           lastError: errorMessage,
+        });
+
+        // Publish: task failed
+        publishAgentEvent({
+          type: "failed",
+          agentName,
+          taskId,
+          taskTitle,
+          projectId,
+          message: `${displayName} failed: ${taskTitle}`,
+          data: { error: errorMessage, duration },
         });
 
         console.error(

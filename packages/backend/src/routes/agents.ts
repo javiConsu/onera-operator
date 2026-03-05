@@ -5,6 +5,7 @@ import { getTaskMetrics, getPendingAutomatableTasks } from "../services/task.ser
 import { enqueueTaskExecution } from "../queue/task.queue.js";
 import { AGENT_DISPLAY_NAMES } from "@onera/agents";
 import { prisma } from "@onera/database";
+import { createActivitySubscriber } from "../services/activity.service.js";
 
 export async function agentRoutes(app: FastifyInstance) {
   // List all agent statuses
@@ -80,6 +81,43 @@ export async function agentRoutes(app: FastifyInstance) {
       }
 
       return reply.send({ lines });
+    }
+  );
+
+  // SSE stream for real-time agent activity events
+  app.get<{ Querystring: { projectId?: string } }>(
+    "/api/activity/stream",
+    async (request, reply) => {
+      const { projectId } = request.query;
+
+      reply.raw.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+
+      // Send initial keepalive
+      reply.raw.write(": connected\n\n");
+
+      // Subscribe to Redis agent activity channel
+      const { unsubscribe } = createActivitySubscriber((event) => {
+        // Optionally filter by projectId
+        if (projectId && event.projectId !== projectId) return;
+
+        reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
+      });
+
+      // Send keepalive every 15s to prevent timeout
+      const keepalive = setInterval(() => {
+        reply.raw.write(": keepalive\n\n");
+      }, 15000);
+
+      // Cleanup when client disconnects
+      request.raw.on("close", () => {
+        clearInterval(keepalive);
+        unsubscribe();
+      });
     }
   );
 

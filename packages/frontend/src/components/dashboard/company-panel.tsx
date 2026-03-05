@@ -8,6 +8,7 @@ import { api, type TaskMetrics, type AgentStatus, type Project } from "@/lib/api
 import { formatRelativeTime } from "@/lib/utils";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { BillingSection } from "./billing-section";
+import { LiveFeed } from "./live-feed";
 
 interface CompanyPanelProps {
   projectName: string;
@@ -171,6 +172,9 @@ export function CompanyPanel({
           </div>
         </div>
       </div>
+
+      {/* Live agent activity feed */}
+      <LiveFeed projectId={projectId} />
 
       {/* All agents roster */}
       {agents.length > 0 && (

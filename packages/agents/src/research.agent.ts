@@ -1,10 +1,12 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
 import { competitorResearch, webSearch, webScraper, summarizeContent } from "@onera/tools";
+import type { StepEvent } from "./registry.js";
 
 export interface ResearchAgentInput {
   taskDescription: string;
   projectContext: string;
+  onStep?: (event: StepEvent) => void;
 }
 
 /**
@@ -36,6 +38,18 @@ export async function runResearchAgent(input: ResearchAgentInput) {
       `## Task\n${input.taskDescription}\n\n` +
       `## Startup Context\n${input.projectContext}\n\n` +
       `Execute this research task. Analyze and provide actionable findings.`,
+    onStepFinish: (step) => {
+      if (!input.onStep) return;
+      if (step.text) {
+        input.onStep({ type: "thinking", message: step.text });
+      }
+      for (const tc of step.toolCalls || []) {
+        input.onStep({ type: "tool_call", message: `Using ${tc.toolName}`, data: tc.args });
+      }
+      for (const tr of step.toolResults || []) {
+        input.onStep({ type: "tool_result", message: `${tr.toolName} done`, data: tr.result });
+      }
+    },
   });
 
   return {

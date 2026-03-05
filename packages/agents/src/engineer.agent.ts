@@ -1,10 +1,12 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
 import { executeCode, webSearch, webScraper, summarizeContent } from "@onera/tools";
+import type { StepEvent } from "./registry.js";
 
 export interface EngineerAgentInput {
   taskDescription: string;
   projectContext: string;
+  onStep?: (event: StepEvent) => void;
 }
 
 /**
@@ -54,6 +56,18 @@ export async function runEngineerAgent(input: EngineerAgentInput) {
       `## Startup Context\n${input.projectContext}\n\n` +
       `Write and execute code to accomplish this task. ` +
       `If execution is not possible (e.g., E2B not configured), describe what the code would do.`,
+    onStepFinish: (step) => {
+      if (!input.onStep) return;
+      if (step.text) {
+        input.onStep({ type: "thinking", message: step.text });
+      }
+      for (const tc of step.toolCalls || []) {
+        input.onStep({ type: "tool_call", message: `Using ${tc.toolName}`, data: tc.args });
+      }
+      for (const tr of step.toolResults || []) {
+        input.onStep({ type: "tool_result", message: `${tr.toolName} done`, data: tr.result });
+      }
+    },
   });
 
   return {
