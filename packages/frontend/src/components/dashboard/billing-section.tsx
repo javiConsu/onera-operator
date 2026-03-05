@@ -12,7 +12,7 @@ interface BillingSectionProps {
 export function BillingSection({ userId }: BillingSectionProps) {
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [addingCard, setAddingCard] = useState(false);
+  const [gettingStarted, setGettingStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBilling = useCallback(async () => {
@@ -30,16 +30,16 @@ export function BillingSection({ userId }: BillingSectionProps) {
     return () => clearInterval(interval);
   }, [fetchBilling]);
 
-  async function handleAddCard() {
-    setAddingCard(true);
+  async function handleGetStarted() {
+    setGettingStarted(true);
     setError(null);
     try {
-      const { checkoutUrl } = await api.billing.addCard(userId);
+      const { checkoutUrl } = await api.billing.getStarted(userId);
       window.open(checkoutUrl, "_blank");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start card setup");
+      setError(err instanceof Error ? err.message : "Failed to start checkout");
     } finally {
-      setAddingCard(false);
+      setGettingStarted(false);
     }
   }
 
@@ -69,7 +69,7 @@ export function BillingSection({ userId }: BillingSectionProps) {
     );
   }
 
-  // ─── No card yet: show gate ───────────────────────────────────
+  // ─── No card yet: show get-started gate ────────────────────────
   if (!billing.hasCard) {
     return (
       <div className="space-y-3">
@@ -82,18 +82,19 @@ export function BillingSection({ userId }: BillingSectionProps) {
           </div>
           <div className="border-t border-dashed border-border pt-3">
             <p className="text-[11px] font-semibold text-foreground mb-1">
-              Add a card to get started
+              Get started with 550 credits
             </p>
             <p className="text-[9px] text-muted-foreground mb-3 leading-relaxed">
-              Get 50 free credits instantly. No charge until you buy a pack.
+              Buy the Growth pack ($29) and get 50 bonus credits free.
+              That&apos;s 550 credits to power your AI agents.
             </p>
             <Button
               size="sm"
               className="w-full text-[10px] uppercase tracking-wider"
-              onClick={handleAddCard}
-              disabled={addingCard}
+              onClick={handleGetStarted}
+              disabled={gettingStarted}
             >
-              {addingCard ? "Opening..." : "Add Card — Get 50 Free Credits"}
+              {gettingStarted ? "Opening checkout..." : "Get Started — $29 for 550 Credits"}
             </Button>
             {error && (
               <p className="text-[9px] text-destructive mt-2">{error}</p>
@@ -101,22 +102,22 @@ export function BillingSection({ userId }: BillingSectionProps) {
           </div>
         </div>
 
-        {/* Show what 50 credits gets you */}
+        {/* Show what 550 credits gets you */}
         <div className="border border-dashed border-border p-3">
           <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-2">
-            50 credits gets you
+            550 credits gets you
           </p>
           <div className="space-y-1 text-[9px] text-muted-foreground">
             <div className="flex justify-between">
-              <span>~16 tweets posted</span>
+              <span>~183 tweets posted</span>
               <span className="text-foreground">3 cr each</span>
             </div>
             <div className="flex justify-between">
-              <span>~10 outreach emails</span>
+              <span>~110 outreach emails</span>
               <span className="text-foreground">5 cr each</span>
             </div>
             <div className="flex justify-between">
-              <span>~10 research tasks</span>
+              <span>~110 research tasks</span>
               <span className="text-foreground">5 cr each</span>
             </div>
             <div className="flex justify-between">

@@ -1,11 +1,12 @@
 import { prisma } from "@onera/database";
 
 // ─── Credit Pack Definitions (Final Pricing) ────────────────────
+// DodoPayments product IDs (test_mode)
 export const CREDIT_PACKS = [
-  { slug: "growth-500", name: "Growth", credits: 500, price: 2900 },      // $29
-  { slug: "scale-2000", name: "Scale", credits: 2000, price: 79_00 },     // $79
-  { slug: "power-5000", name: "Power", credits: 5000, price: 149_00 },    // $149
-  { slug: "mega-15000", name: "Mega", credits: 15000, price: 299_00 },    // $299
+  { slug: "growth-500", name: "Growth", credits: 500, price: 2900, dodoProductId: "pdt_0NZp5BE9UAYTaMJTk1okg" },
+  { slug: "scale-2000", name: "Scale", credits: 2000, price: 7900, dodoProductId: "pdt_0NZp5BKBRQssPeowsoW4P" },
+  { slug: "power-5000", name: "Power", credits: 5000, price: 14900, dodoProductId: "pdt_0NZp5BNmHqf19pQMPcN3x" },
+  { slug: "mega-15000", name: "Mega", credits: 15000, price: 29900, dodoProductId: "pdt_0NZp5BRB4RMv9CaC0KnYN" },
 ] as const;
 
 export const CARD_BONUS_CREDITS = 50;
@@ -191,7 +192,7 @@ export async function attemptAutoCharge(
           name: user.name || "OneraOS User",
         },
         product_cart: [
-          { product_id: AUTO_CHARGE_PACK.slug, quantity: 1 },
+          { product_id: AUTO_CHARGE_PACK.dodoProductId, quantity: 1 },
         ],
         metadata: {
           userId,

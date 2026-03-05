@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { Checkout, Webhooks } from "@dodopayments/fastify";
+import { Webhooks } from "@dodopayments/fastify";
 import {
   activateCard,
   addCredits,
@@ -12,24 +12,19 @@ import {
 import { prisma } from "@onera/database";
 
 const DODO_ENV = (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") || "test_mode";
+const DODO_API_BASE = DODO_ENV === "live_mode"
+  ? "https://live.dodopayments.com"
+  : "https://test.dodopayments.com";
 
 export async function billingRoutes(app: FastifyInstance) {
-  // ─── Add Card: DodoPayments checkout to capture card ──────────
-  // This is a $0 authorization / setup — user adds card, gets 50 free credits
-  const cardCheckout = Checkout({
-    bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-    environment: DODO_ENV,
-    returnUrl: process.env.DODO_PAYMENTS_RETURN_URL || `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?card=added`,
-    type: "dynamic",
-  });
-
-  app.post("/api/billing/checkout", cardCheckout.postHandler);
-
-  // ─── Add Card (custom route for frontend) ─────────────────────
+  // ─── Get Started: Buy Growth pack + get 50 bonus credits ──────
+  // New users have 0 credits. Their first action is buying the Growth pack.
+  // On first purchase, they also get CARD_BONUS_CREDITS (50) free on top.
   app.post<{
     Body: { userId: string };
-  }>("/api/billing/add-card", async (request, reply) => {
+  }>("/api/billing/get-started", async (request, reply) => {
     const { userId } = request.body;
+    const starterPack = CREDIT_PACKS[0]; // Growth $29/500
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -39,17 +34,7 @@ export async function billingRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "User not found" });
     }
 
-    // Already has card
-    if (user.dodoCustomerId) {
-      return reply.code(400).send({ error: "Card already added" });
-    }
-
-    const baseUrl = DODO_ENV === "live_mode"
-      ? "https://live.dodopayments.com"
-      : "https://test.dodopayments.com";
-
-    // Create a $0 payment / card setup via DodoPayments
-    const response = await fetch(`${baseUrl}/payments`, {
+    const response = await fetch(`${DODO_API_BASE}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,23 +43,26 @@ export async function billingRoutes(app: FastifyInstance) {
       body: JSON.stringify({
         billing: { country: "US" },
         customer: {
+          ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
           name: user.name || "OneraOS User",
         },
-        product_cart: [],
+        product_cart: [{ product_id: starterPack.dodoProductId, quantity: 1 }],
         payment_link: true,
-        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?card=added`,
+        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?purchase=success&pack=${starterPack.slug}`,
         metadata: {
           userId,
-          type: "card_setup",
+          packSlug: starterPack.slug,
+          type: "credit_pack",
+          isFirstPurchase: user.dodoCustomerId ? "false" : "true",
         },
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      app.log.error({ err }, "DodoPayments card setup failed");
-      return reply.code(500).send({ error: "Card setup failed" });
+      app.log.error({ err }, "DodoPayments get-started checkout failed");
+      return reply.code(500).send({ error: "Payment creation failed" });
     }
 
     const data = await response.json() as { payment_link: string };
@@ -100,11 +88,7 @@ export async function billingRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "User not found" });
     }
 
-    const baseUrl = DODO_ENV === "live_mode"
-      ? "https://live.dodopayments.com"
-      : "https://test.dodopayments.com";
-
-    const response = await fetch(`${baseUrl}/payments`, {
+    const response = await fetch(`${DODO_API_BASE}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -113,17 +97,18 @@ export async function billingRoutes(app: FastifyInstance) {
       body: JSON.stringify({
         billing: { country: "US" },
         customer: {
-          customer_id: user.dodoCustomerId || undefined,
+          ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
           name: user.name || "OneraOS User",
         },
-        product_cart: [{ product_id: packSlug, quantity: 1 }],
+        product_cart: [{ product_id: pack.dodoProductId, quantity: 1 }],
         payment_link: true,
         return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?purchase=success&pack=${packSlug}`,
         metadata: {
           userId,
           packSlug,
           type: "credit_pack",
+          isFirstPurchase: user.dodoCustomerId ? "false" : "true",
         },
       }),
     });
@@ -163,18 +148,11 @@ export async function billingRoutes(app: FastifyInstance) {
           const userId = metadata.userId;
           if (!userId) return;
 
-          if (metadata.type === "card_setup") {
-            // Card added — give 50 free credits (first time only)
-            if (customerId) {
-              await activateCard(userId, customerId);
-              app.log.info({ userId }, `Card added: ${CARD_BONUS_CREDITS} free credits granted`);
-            }
-          } else if (metadata.type === "credit_pack") {
-            // Credit pack purchase
+          if (metadata.type === "credit_pack") {
             const packSlug = metadata.packSlug;
             const pack = CREDIT_PACKS.find((p) => p.slug === packSlug);
 
-            // Also link customer if not yet linked
+            // Link customer + grant 50 bonus on first purchase
             if (customerId) {
               await activateCard(userId, customerId).catch(() => {});
             }
@@ -182,13 +160,16 @@ export async function billingRoutes(app: FastifyInstance) {
             if (pack) {
               await addCredits(userId, pack.credits, {
                 type: "PURCHASE",
-                description: `Purchased ${pack.name} pack: ${pack.credits} credits`,
+                description: `Purchased ${pack.name}: ${pack.credits} credits`,
                 dodoPaymentId: paymentId,
                 packSlug: pack.slug,
               });
               app.log.info({ userId, pack: pack.slug }, "Credits added from purchase");
             }
           } else if (metadata.type === "auto_charge") {
+            if (customerId) {
+              await activateCard(userId, customerId).catch(() => {});
+            }
             await addCredits(userId, AUTO_CHARGE_PACK.credits, {
               type: "AUTO_CHARGE",
               description: `Auto-charged: ${AUTO_CHARGE_PACK.credits} credits ($${AUTO_CHARGE_PACK.price / 100})`,
