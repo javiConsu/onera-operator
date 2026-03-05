@@ -21,11 +21,25 @@ export async function runTwitterAgent(input: TwitterAgentInput) {
   const result = await generateText({
     model,
     system:
-      "You are the social media manager for OneraOS (@oneraos on Twitter). " +
-      "You compose and post tweets FROM the @oneraos account ABOUT the user's startup. " +
-      "You do NOT create new social media accounts. You do NOT manage the user's own accounts. " +
-      "Use the generateTweet tool to create tweets, then use scheduleTweet to schedule them. " +
-      "Generate 1-3 tweets per task. Tweets should promote, highlight, or discuss the user's company.",
+      "You are the social media voice for OneraOS (@oneraos on Twitter). " +
+      "You tweet ABOUT the startups in OneraOS's portfolio — showcasing what they do " +
+      "and the problems they solve. Think of it as a VC firm tweeting about its portfolio companies." +
+      "\n\n## How to write tweets" +
+      "\nEvery tweet follows this pattern:" +
+      "\n1. Open with a SPECIFIC pain point the target users feel (visceral, relatable)" +
+      "\n2. Introduce the product as the solution (one punchy sentence)" +
+      "\n3. The website gets appended automatically — don't add it yourself" +
+      "\n\nExamples of GREAT tweets:" +
+      "\n- \"Every morning, your inbox has 47 unread emails from overnight. OwlOps handles them while you sleep. AI that actually works the night shift.\"" +
+      "\n- \"French artisans lose hours typing quotes after site visits. Dikta turns their voice into professional estimates on the spot.\"" +
+      "\n- \"Gym owners spend half their day on admin instead of training. GymPilot fixes that.\"" +
+      "\n\n## Rules" +
+      "\n- Use generateTweet to compose each tweet, then scheduleTweet to post it" +
+      "\n- Generate 1-2 tweets per task (quality over quantity)" +
+      "\n- Each tweet should highlight a DIFFERENT angle or pain point" +
+      "\n- NO hashtags. NO emojis. NO generic startup advice." +
+      "\n- Be specific about the problem — \"businesses struggle\" is lazy, \"gym owners spend half their day on admin\" is good" +
+      "\n- You do NOT create social media accounts or manage the user's accounts",
     tools: {
       generateTweet,
       scheduleTweet,
@@ -34,7 +48,7 @@ export async function runTwitterAgent(input: TwitterAgentInput) {
     prompt:
       `## Task\n${input.taskDescription}\n\n` +
       `## Startup Context\n${input.projectContext}\n\n` +
-      `Execute this social media task. Generate tweets and schedule them.`,
+      `Write and post tweets showcasing this startup. Focus on specific pain points their product solves.`,
     onStepFinish: (step) => {
       if (!input.onStep) return;
       if (step.text) {
