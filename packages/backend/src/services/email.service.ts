@@ -217,108 +217,123 @@ export async function sendWelcomeEmail(params: {
   const ownerEmail = project.user.email;
   const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard`;
 
-  const subject = `Welcome to Onera Operator: ${params.projectName} is live!`;
+  const subject = `${params.projectName} is live. Here's what I found.`;
 
-  const plainText = `Hi ${ownerName},
+  const plainText = `Hey ${ownerName},
 
-This is your first email from your new company: ${params.projectName}!
+Quick heads up: I just finished going through ${params.projectName} (${params.website}) and I'm ready to get started.
 
-You now have a company email: ${params.companyEmail}
+${params.product ? `Here's what I picked up about your product: ${params.product}` : ""}
+${params.description ? `${params.description}` : ""}
 
-I've just finished researching ${params.projectName} (${params.website}). Here's what I found:
+Your company email is set up: ${params.companyEmail}. All outreach and updates will come from this address.
 
-${params.product ? `Product: ${params.product}` : ""}
-${params.description ? `About: ${params.description}` : ""}
+I'm already planning your first batch of tasks: growth moves, outreach targets, competitive research. You can watch it happen in real time on your dashboard.
 
-I'm setting things up for you right now. Planning tasks, identifying growth opportunities, and getting to work.
+${dashboardUrl}
 
-Check your dashboard to watch me work: ${dashboardUrl}
-
+Talk soon,
 Onera Operator
-   COO for ${params.projectName}
-   ${params.companyEmail}`;
+COO for ${params.projectName}`;
 
   const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Onera Operator</title>
+  <title>${params.projectName} is live</title>
 </head>
-<body style="margin: 0; padding: 0; background: #f7f7f7;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f7f7f7;">
+<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
     <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 4px; border: 1px solid #e0e0e0;">
+      <td align="center" style="padding: 32px 16px;">
 
-          <!-- Header -->
+        <!-- Main card -->
+        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
+
+          <!-- Header bar -->
           <tr>
-            <td style="padding: 32px 40px 24px; border-bottom: 2px solid #1a1a1a;">
-              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; letter-spacing: 0.5px;">
-                ONERA OPERATOR
-              </p>
+            <td style="padding: 16px 24px; border-bottom: 2px solid #0033CC;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">&gt; ONERA OPERATOR</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">WELCOME</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding: 32px 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.7;">
+            <td style="padding: 24px 24px 8px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #141D33; line-height: 1.65;">
 
-              <p style="margin: 0 0 20px;">Hi ${ownerName},</p>
+              <p style="margin: 0 0 14px;">Hey ${ownerName},</p>
 
-              <p style="margin: 0 0 20px;">
-                This is your first email from your new company: <strong>${params.projectName}</strong>!
-              </p>
-
-              <p style="margin: 0 0 24px;">
-                You now have a company email: <strong style="color: #2563eb;">${params.companyEmail}</strong>
-              </p>
-
-              <p style="margin: 0 0 20px;">
-                I've just finished researching
-                <a href="${params.website}" style="color: #2563eb; text-decoration: none;">${params.projectName}</a>.
-                Here's what I found:
+              <p style="margin: 0 0 14px;">
+                I just finished going through
+                <a href="${params.website}" style="color: #0033CC; text-decoration: none; font-weight: 600;">${params.projectName}</a>
+                and I'm ready to get to work.
               </p>
 
               ${
                 params.product || params.description
-                  ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
+                  ? `<!-- Research findings -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 16px;">
                       <tr>
-                        <td style="padding: 16px 20px; background: #f8fafc; border-left: 3px solid #2563eb; font-size: 14px; color: #334155; line-height: 1.6;">
-                          ${params.product ? `<strong>Product:</strong> ${params.product}<br>` : ""}
-                          ${params.description ? `<strong>About:</strong> ${params.description}` : ""}
+                        <td style="padding: 12px 16px; border: 1px dashed #A3B3D6; background: #FBFCFF;">
+                          <p style="margin: 0 0 4px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; font-weight: 600; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">What I picked up</p>
+                          ${params.product ? `<p style="margin: 4px 0; font-size: 13px; color: #141D33; line-height: 1.6;">${params.product}</p>` : ""}
+                          ${params.description ? `<p style="margin: 4px 0; font-size: 13px; color: #4B5363; line-height: 1.6;">${params.description}</p>` : ""}
                         </td>
                       </tr>
                     </table>`
                   : ""
               }
 
-              <p style="margin: 0 0 24px;">
-                I'm setting things up for you right now. Check your dashboard to watch me work!
+              <p style="margin: 0 0 14px;">
+                Your company email is set up:
+                <strong style="color: #0033CC;">${params.companyEmail}</strong>.
+                All outreach and updates will come from this address.
               </p>
 
-              <!-- CTA Button -->
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 0 32px;">
-                <tr>
-                  <td style="background: #1a1a1a; border-radius: 4px;">
-                    <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; letter-spacing: 0.3px;">
-                      View Dashboard &rarr;
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Sign-off -->
-              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                Onera Operator<br>
-                COO for ${params.projectName}<br>
-                <a href="mailto:${params.companyEmail}" style="color: #2563eb; text-decoration: none;">${params.companyEmail}</a>
+              <p style="margin: 0 0 20px;">
+                I'm already planning your first batch of tasks: growth moves, outreach targets, competitive research. You can watch it happen live.
               </p>
 
             </td>
           </tr>
 
+          <!-- CTA -->
+          <tr>
+            <td style="padding: 0 24px 24px;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="border: 2px solid #0033CC; background-color: #0033CC;">
+                    <a href="${dashboardUrl}" style="display: inline-block; padding: 8px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #FFFFFF; text-decoration: none; text-transform: uppercase; letter-spacing: 0.025em;">Open Dashboard &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 16px 24px; border-top: 1px dashed #A3B3D6;">
+              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.05em;">
+                Onera Operator / COO for ${params.projectName}
+              </p>
+              <p style="margin: 4px 0 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #A3B3D6;">
+                ${params.companyEmail}
+              </p>
+            </td>
+          </tr>
+
         </table>
+
       </td>
     </tr>
   </table>

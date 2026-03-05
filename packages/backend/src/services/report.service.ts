@@ -87,63 +87,153 @@ export async function sendDailyDigestEmail(params: {
   const ownerName = project.user.name || "Founder";
   const ownerEmail = project.user.email;
 
-  const highlightsList =
+  const dashboardUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard`;
+
+  const highlightItems =
     params.highlights.length > 0
-      ? params.highlights.map((h) => `<li>${h}</li>`).join("")
-      : "<li>Agent loop ran successfully</li>";
+      ? params.highlights
+      : ["Agent loop ran successfully"];
 
-  const nextStepsList =
+  const nextStepItems =
     params.nextSteps.length > 0
-      ? params.nextSteps.map((s) => `<li>${s}</li>`).join("")
-      : "<li>Continuous agent loop running every 4 hours</li>";
+      ? params.nextSteps
+      : ["Continuous loop running every 4 hours"];
 
-  const htmlBody = `
-<!DOCTYPE html>
+  const highlightsHtml = highlightItems
+    .map(
+      (h) =>
+        `<tr><td style="padding: 3px 0; font-size: 13px; color: #141D33; line-height: 1.5; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;"><span style="color: #0033CC; font-family: 'JetBrains Mono', monospace; font-size: 11px;">&#10003;</span>&nbsp; ${h}</td></tr>`
+    )
+    .join("");
+
+  const nextStepsHtml = nextStepItems
+    .map(
+      (s, i) =>
+        `<tr><td style="padding: 3px 0; font-size: 13px; color: #141D33; line-height: 1.5; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;"><span style="color: #4B5363; font-family: 'JetBrains Mono', monospace; font-size: 11px;">${i + 1}.</span>&nbsp; ${s}</td></tr>`
+    )
+    .join("");
+
+  // Trim the full report for email and escape basic HTML
+  const reportPreview = params.reportContent
+    .substring(0, 1500)
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  const htmlBody = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daily Digest: ${params.projectName}</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; background: #f9f9f9;">
-  <div style="background: white; border-radius: 8px; padding: 32px; border: 1px solid #e5e5e5;">
-    <div style="border-bottom: 2px solid #000; padding-bottom: 16px; margin-bottom: 24px;">
-      <h1 style="margin: 0; font-size: 20px; font-family: 'JetBrains Mono', monospace, sans-serif;">
-        ▶ ONERA OPERATOR
-      </h1>
-      <p style="margin: 4px 0 0; color: #666; font-size: 13px;">Daily Digest: ${params.date}</p>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" style="padding: 32px 16px;">
 
-    <p style="margin: 0 0 24px;">Hi ${ownerName},</p>
+        <!-- Main card -->
+        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
 
-    <p style="margin: 0 0 24px;">Here's what your AI operator did for <strong>${params.projectName}</strong> today:</p>
+          <!-- Header bar -->
+          <tr>
+            <td style="padding: 16px 24px; border-bottom: 2px solid #0033CC;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">&gt; ONERA OPERATOR</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">${params.date}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <div style="background: #f0f9f0; border-left: 3px solid #22c55e; padding: 16px; margin-bottom: 24px;">
-      <h3 style="margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">✅ Completed Today</h3>
-      <p style="margin: 0 0 8px; color: #555; font-size: 14px;">${params.completedCount} tasks completed</p>
-      <ul style="margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: #444;">
-        ${highlightsList}
-      </ul>
-    </div>
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 24px 24px 14px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #141D33; line-height: 1.65;">
+              <p style="margin: 0 0 14px;">Hey ${ownerName},</p>
+              <p style="margin: 0;">Here's what happened with <strong>${params.projectName}</strong> today. ${params.completedCount} tasks done, ${params.pendingCount} queued up for next cycle.</p>
+            </td>
+          </tr>
 
-    <div style="background: #fafafa; border-left: 3px solid #3b82f6; padding: 16px; margin-bottom: 24px;">
-      <h3 style="margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🎯 Next Steps</h3>
-      <p style="margin: 0 0 8px; color: #555; font-size: 14px;">${params.pendingCount} tasks pending</p>
-      <ul style="margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: #444;">
-        ${nextStepsList}
-      </ul>
-    </div>
+          <!-- Completed section -->
+          <tr>
+            <td style="padding: 16px 24px 8px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border: 1px dashed #A3B3D6; background: #FBFCFF;">
+                <tr>
+                  <td style="padding: 12px 16px;">
+                    <p style="margin: 0 0 8px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">Shipped</p>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      ${highlightsHtml}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <div style="background: #fff8f0; border-left: 3px solid #f59e0b; padding: 16px; margin-bottom: 24px;">
-      <h3 style="margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Full Report</h3>
-      <pre style="margin: 0; font-size: 12px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; color: #444; max-height: 400px; overflow: hidden;">${params.reportContent.substring(0, 2000)}${params.reportContent.length > 2000 ? "\n\n[... view full report on dashboard]" : ""}</pre>
-    </div>
+          <!-- Next steps section -->
+          <tr>
+            <td style="padding: 8px 24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border: 1px dashed #A3B3D6; background: #FBFCFF;">
+                <tr>
+                  <td style="padding: 12px 16px;">
+                    <p style="margin: 0 0 8px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; font-weight: 600; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">Up Next</p>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      ${nextStepsHtml}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <p style="margin: 0; font-size: 13px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 16px;">
-      Your AI operator is running 24/7. Reply to this email or use the dashboard to give feedback.<br>
-      <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard" style="color: #3b82f6;">View Dashboard</a>
-    </p>
-  </div>
+          <!-- Full report preview -->
+          <tr>
+            <td style="padding: 8px 24px 16px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border: 1px dashed #A3B3D6;">
+                <tr>
+                  <td style="padding: 12px 16px;">
+                    <p style="margin: 0 0 8px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; font-weight: 600; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">Full Report</p>
+                    <pre style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; color: #4B5363; white-space: pre-wrap; line-height: 1.5; max-height: 300px; overflow: hidden;">${reportPreview}${params.reportContent.length > 1500 ? "\n\n..." : ""}</pre>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding: 0 24px 24px;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="border: 2px solid #0033CC; background-color: #0033CC;">
+                    <a href="${dashboardUrl}" style="display: inline-block; padding: 8px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #FFFFFF; text-decoration: none; text-transform: uppercase; letter-spacing: 0.025em;">Open Dashboard &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 16px 24px; border-top: 1px dashed #A3B3D6;">
+              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.05em;">
+                Onera Operator / COO for ${params.projectName}
+              </p>
+              <p style="margin: 6px 0 0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; color: #A3B3D6;">
+                Running 24/7. Reply to this email or check the dashboard anytime.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 
@@ -152,9 +242,9 @@ export async function sendDailyDigestEmail(params: {
     const poller = await emailClient.beginSend({
       senderAddress,
       content: {
-        subject: `[${params.projectName}] Daily Operator Digest: ${params.date}`,
+        subject: `[${params.projectName}] Here's what happened today`,
         html: htmlBody,
-        plainText: `Daily Digest for ${params.projectName} | ${params.date}\n\n${params.completedCount} tasks completed today.\n\nHighlights:\n${params.highlights.join("\n")}\n\nNext steps:\n${params.nextSteps.join("\n")}\n\nFull report:\n${params.reportContent.substring(0, 3000)}`,
+        plainText: `Hey ${ownerName},\n\nHere's what happened with ${params.projectName} today. ${params.completedCount} tasks done, ${params.pendingCount} queued up.\n\nShipped:\n${highlightItems.map((h) => `  * ${h}`).join("\n")}\n\nUp next:\n${nextStepItems.map((s, i) => `  ${i + 1}. ${s}`).join("\n")}\n\nFull report:\n${params.reportContent.substring(0, 2000)}\n\nOpen your dashboard: ${dashboardUrl}\n\nOnera Operator / COO for ${params.projectName}`,
       },
       recipients: {
         to: [{ address: ownerEmail }],

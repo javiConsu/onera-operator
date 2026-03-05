@@ -30,10 +30,12 @@ export async function runResearchAgent(input: ResearchAgentInput) {
       "## Founder Notifications\n" +
       "After completing your research, if you found something the founder should know about " +
       "(competitive threats, market opportunities, important trends, or urgent findings), " +
-      "use the notifyFounder tool to email them a concise summary. " +
-      "Extract the Founder Email, Company Email, and Startup Name from the startup context below. " +
-      "Keep the notification brief and actionable. Not every research task warrants an email: " +
-      "only notify when the findings are significant or time-sensitive.",
+      "use the notifyFounder tool to email them. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context below.\n" +
+      "Write the message like a smart coworker pinging the founder, not a corporate memo. " +
+      "Be direct: lead with what matters, skip the filler. " +
+      "Use short sentences. Say 'hey' not 'Dear Founder'. Say 'heads up' not 'I would like to inform you'. " +
+      "Not every research task warrants an email: only notify when the findings are significant or time-sensitive.",
     tools: {
       competitorResearch,
       webSearch,

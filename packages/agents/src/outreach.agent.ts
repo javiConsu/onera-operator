@@ -49,9 +49,11 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "Be strategic about who to reach out to and personalize each email. " +
       "If you have the recipient's company URL from findLeads, pass it as recipientCompanyUrl to generateEmail.\n\n" +
       "## Founder Notifications\n" +
-      "After completing outreach, use notifyFounder to email the founder a brief summary: " +
-      "how many leads were found, how many emails were sent, and any notable responses or rejections. " +
-      "Extract the Founder Email, Company Email, and Startup Name from the startup context.",
+      "After completing outreach, use notifyFounder to give the founder a quick update: " +
+      "how many leads you found, how many emails went out, and anything notable. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context.\n" +
+      "Write it like a Slack message to your cofounder: casual, direct, no fluff. " +
+      "Say 'sent 5 emails, 2 bounced' not 'I have successfully dispatched correspondence to 5 recipients'.",
     tools: {
       generateEmail,
       sendEmail,

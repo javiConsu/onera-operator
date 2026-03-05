@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EmailClient } from "@azure/communication-email";
 
 /**
- * Builds a clean, professional insight-notification HTML email.
+ * Builds the notification email HTML matching the OneraOS blueprint aesthetic.
  */
 function buildNotificationHtml(params: {
   companyName: string;
@@ -11,14 +11,13 @@ function buildNotificationHtml(params: {
   message: string;
   dashboardUrl: string;
 }): string {
-  // Convert plain-text message to HTML paragraphs
   const paragraphs = params.message
     .split("\n\n")
     .map((p) => p.trim())
     .filter(Boolean)
     .map((p) => {
       const html = p.replace(/\n/g, "<br>");
-      return `<p style="margin: 0 0 16px; line-height: 1.7; color: #1a1a1a;">${html}</p>`;
+      return `<p style="margin: 0 0 14px; line-height: 1.65; color: #141D33; font-size: 14px;">${html}</p>`;
     })
     .join("");
 
@@ -29,49 +28,61 @@ function buildNotificationHtml(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${params.subject}</title>
 </head>
-<body style="margin: 0; padding: 0; background: #f7f7f7;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f7f7f7;">
+<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
     <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 4px; border: 1px solid #e0e0e0;">
+      <td align="center" style="padding: 32px 16px;">
 
-          <!-- Header -->
+        <!-- Main card -->
+        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
+
+          <!-- Header bar -->
           <tr>
-            <td style="padding: 24px 40px 16px; border-bottom: 2px solid #1a1a1a;">
-              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; letter-spacing: 0.5px;">
-                ONERA OPERATOR
-              </p>
-              <p style="margin: 4px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #64748b;">
-                Update for ${params.companyName}
-              </p>
+            <td style="padding: 16px 24px; border-bottom: 2px solid #0033CC;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">&gt; ONERA OPERATOR</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">${params.companyName}</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding: 32px 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 15px;">
+            <td style="padding: 24px 24px 16px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
               ${paragraphs}
+            </td>
+          </tr>
 
-              <!-- CTA -->
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 24px 0 32px;">
+          <!-- CTA -->
+          <tr>
+            <td style="padding: 0 24px 24px;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="background: #1a1a1a; border-radius: 4px;">
-                    <a href="${params.dashboardUrl}" style="display: inline-block; padding: 12px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; letter-spacing: 0.3px;">
-                      View Dashboard &rarr;
-                    </a>
+                  <td style="border: 2px solid #0033CC; background-color: #0033CC;">
+                    <a href="${params.dashboardUrl}" style="display: inline-block; padding: 8px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #FFFFFF; text-decoration: none; text-transform: uppercase; letter-spacing: 0.025em;">View Dashboard &rarr;</a>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
 
-              <!-- Sign-off -->
-              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                Onera Operator<br>
-                COO for ${params.companyName}
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 16px 24px; border-top: 1px dashed #A3B3D6;">
+              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.05em;">
+                Onera Operator / COO for ${params.companyName}
               </p>
             </td>
           </tr>
 
         </table>
+
       </td>
     </tr>
   </table>
@@ -114,9 +125,10 @@ export const notifyFounder = tool({
     message: z
       .string()
       .describe(
-        "The notification message. Be concise and actionable. " +
-        "Lead with the key insight, then provide context. " +
-        "End with a recommendation or next step if applicable."
+        "The notification message. Write like a smart coworker, not a corporate AI. " +
+        "Lead with the key finding. Be direct and specific. " +
+        "Short paragraphs. No filler phrases like 'I wanted to let you know' or 'I am pleased to share'. " +
+        "End with what they should do about it, if anything."
       ),
   }),
   execute: async ({ founderEmail, companyEmail, companyName, subject, message }) => {

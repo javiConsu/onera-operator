@@ -47,9 +47,11 @@ export async function runEngineerAgent(input: EngineerAgentInput) {
       "## Founder Notifications\n" +
       "If your work produces results the founder should see " +
       "(data analysis findings, working prototypes, important technical insights), " +
-      "use the notifyFounder tool to email them a summary. " +
-      "Extract the Founder Email, Company Email, and Startup Name from the startup context below. " +
-      "Only notify for significant or actionable results, not routine task completions.",
+      "use the notifyFounder tool to email them. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context below.\n" +
+      "Write like a teammate, not a robot. Be direct and specific. " +
+      "Say 'found something interesting' not 'I am pleased to share the following results'. " +
+      "Short paragraphs. No corporate fluff. Only notify for significant or actionable results.",
     tools: {
       executeCode,
       webSearch,

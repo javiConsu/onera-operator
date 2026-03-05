@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EmailClient } from "@azure/communication-email";
 
 /**
- * Converts plain-text email body into clean, professional inline-styled HTML.
+ * Converts plain-text email body into clean HTML matching the OneraOS blueprint aesthetic.
  * Preserves paragraph breaks, handles sign-off blocks, and keeps it minimal.
  */
 function toCleanHtml(body: string): string {
@@ -13,7 +13,7 @@ function toCleanHtml(body: string): string {
     .filter(Boolean)
     .map((para) => {
       const html = para.replace(/\n/g, "<br>");
-      return `<p style="margin: 0 0 16px; line-height: 1.6;">${html}</p>`;
+      return `<p style="margin: 0 0 14px; line-height: 1.65; color: #141D33; font-size: 14px;">${html}</p>`;
     })
     .join("");
 
@@ -23,13 +23,13 @@ function toCleanHtml(body: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background: #f7f7f7;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f7f7f7;">
+<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
     <tr>
       <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 4px; border: 1px solid #e5e5e5;">
+        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
           <tr>
-            <td style="padding: 32px 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 15px; color: #1a1a1a;">
+            <td style="padding: 24px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
               ${paragraphs}
             </td>
           </tr>
