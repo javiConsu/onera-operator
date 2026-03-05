@@ -61,7 +61,7 @@ export default function LivePage() {
   }, [fetchData]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* ── Scrolling terminal bar ───────────────────────────────── */}
       <TerminalBar lines={data?.terminalLines ?? []} />
 
