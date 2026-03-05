@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
-import { executeCode, webSearch, webScraper, summarizeContent } from "@onera/tools";
+import { executeCode, webSearch, webScraper, summarizeContent, notifyFounder } from "@onera/tools";
 import type { StepEvent } from "./registry.js";
 
 export interface EngineerAgentInput {
@@ -43,12 +43,19 @@ export async function runEngineerAgent(input: EngineerAgentInput) {
       "\n\nPrefer Python for data processing, analysis, and automation tasks. " +
       "Use JavaScript for web-related tasks. " +
       "Always handle errors gracefully and return meaningful output. " +
-      "Keep code concise and focused on the task.",
+      "Keep code concise and focused on the task.\n\n" +
+      "## Founder Notifications\n" +
+      "If your work produces results the founder should see " +
+      "(data analysis findings, working prototypes, important technical insights), " +
+      "use the notifyFounder tool to email them a summary. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context below. " +
+      "Only notify for significant or actionable results, not routine task completions.",
     tools: {
       executeCode,
       webSearch,
       webScraper,
       summarizeContent,
+      notifyFounder,
     },
     maxSteps: 15,
     prompt:

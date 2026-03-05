@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
-import { generateEmail, sendEmail, findLeads } from "@onera/tools";
+import { generateEmail, sendEmail, findLeads, notifyFounder } from "@onera/tools";
 import type { StepEvent } from "./registry.js";
 
 export interface OutreachAgentInput {
@@ -47,11 +47,16 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "This ensures replies go to the founder's real inbox, not the send-only company address.\n" +
       "6. If sendEmail returns status 'rejected', read the failures, fix the issues, and retry.\n\n" +
       "Be strategic about who to reach out to and personalize each email. " +
-      "If you have the recipient's company URL from findLeads, pass it as recipientCompanyUrl to generateEmail.",
+      "If you have the recipient's company URL from findLeads, pass it as recipientCompanyUrl to generateEmail.\n\n" +
+      "## Founder Notifications\n" +
+      "After completing outreach, use notifyFounder to email the founder a brief summary: " +
+      "how many leads were found, how many emails were sent, and any notable responses or rejections. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context.",
     tools: {
       generateEmail,
       sendEmail,
       findLeads,
+      notifyFounder,
     },
     maxSteps: 15,
     prompt:

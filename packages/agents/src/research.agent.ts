@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
-import { competitorResearch, webSearch, webScraper, summarizeContent } from "@onera/tools";
+import { competitorResearch, webSearch, webScraper, summarizeContent, notifyFounder } from "@onera/tools";
 import type { StepEvent } from "./registry.js";
 
 export interface ResearchAgentInput {
@@ -26,12 +26,20 @@ export async function runResearchAgent(input: ResearchAgentInput) {
       "Use the competitorResearch tool for competitive analysis, " +
       "webSearch for finding information, webScraper for reading specific web pages, " +
       "and summarizeContent for distilling findings. " +
-      "Provide actionable insights, not just data.",
+      "Provide actionable insights, not just data.\n\n" +
+      "## Founder Notifications\n" +
+      "After completing your research, if you found something the founder should know about " +
+      "(competitive threats, market opportunities, important trends, or urgent findings), " +
+      "use the notifyFounder tool to email them a concise summary. " +
+      "Extract the Founder Email, Company Email, and Startup Name from the startup context below. " +
+      "Keep the notification brief and actionable. Not every research task warrants an email: " +
+      "only notify when the findings are significant or time-sensitive.",
     tools: {
       competitorResearch,
       webSearch,
       webScraper,
       summarizeContent,
+      notifyFounder,
     },
     maxSteps: 10,
     prompt:

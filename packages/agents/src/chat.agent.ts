@@ -13,6 +13,7 @@ import {
   researchCompanyUrl,
   executeCode,
   createTaskManagerTools,
+  notifyFounder,
 } from "@onera/tools";
 
 /**
@@ -76,6 +77,7 @@ export function streamChatAgent(
       summarizeContent,
       researchCompanyUrl,
       executeCode,
+      notifyFounder,
       ...taskTools,
     },
     maxSteps: 10,
