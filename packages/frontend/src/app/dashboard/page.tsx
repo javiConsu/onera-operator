@@ -10,6 +10,7 @@ import { TwitterPanel } from "@/components/dashboard/twitter-panel";
 import { EngineerPanel } from "@/components/dashboard/engineer-panel";
 import { ReportPanel } from "@/components/dashboard/report-panel";
 import { ChatBar } from "@/components/dashboard/chat-bar";
+import { TerminalBar } from "@/components/dashboard/terminal-bar";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
@@ -114,6 +115,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Terminal activity bar */}
+      <TerminalBar projectId={selectedProject?.id} />
 
       {/* 5-column dashboard grid */}
       <div className="flex-1 overflow-hidden">
