@@ -133,6 +133,7 @@ jobs:
             --build-arg NEXT_PUBLIC_BACKEND_URL=https://operator-api.onera.chat \
             --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }} \
             --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
             --build-arg NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard \
             --build-arg NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/new \
             --build-arg NEXT_PUBLIC_CLERK_AFTER_SIGN_OUT_URL=/home \
