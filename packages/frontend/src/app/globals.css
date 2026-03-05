@@ -137,6 +137,9 @@
   content: "_";
   animation: blink 1s infinite;
 }
+.animate-blink {
+  animation: blink 1s infinite;
+}
 
 /* Smooth scrolling */
 html {

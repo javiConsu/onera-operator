@@ -1,15 +1,44 @@
+"use client";
+
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { publicApi, type PublicLiveData } from "@/lib/api-client";
 
 export default function LandingPage() {
+  const [liveData, setLiveData] = useState<PublicLiveData | null>(null);
+
+  const fetchLive = useCallback(async () => {
+    try {
+      setLiveData(await publicApi.live());
+    } catch {
+      /* keep last */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLive();
+    const id = setInterval(fetchLive, 8000);
+    return () => clearInterval(id);
+  }, [fetchLive]);
+
   return (
     <div className="flex min-h-screen flex-col bg-background bp-texture">
+      {/* Live terminal bar — always visible at the very top */}
+      <LiveTerminalBar liveData={liveData} />
+
       {/* Header */}
       <header className="flex items-center justify-between border-b border-dashed border-border px-8 py-4 relative z-10">
         <span className="text-lg font-bold tracking-tight text-primary">
           OneraOS
         </span>
         <div className="flex items-center gap-4">
+          <Link
+            href="/live"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
+          >
+            Live
+          </Link>
           <Link
             href="https://github.com/anomalyco/onera-operator"
             target="_blank"
@@ -30,7 +59,8 @@ export default function LandingPage() {
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 relative z-10">
         <div className="mx-auto max-w-3xl">
           {/* Blueprint tag */}
-          <div className="inline-block border-2 border-primary bg-primary text-primary-foreground px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold mb-8">
+          <div className="inline-flex items-center gap-2 border-2 border-primary bg-primary text-primary-foreground px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold mb-8">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground animate-pulse" />
             Open Source AI Operator
           </div>
 
@@ -48,6 +78,38 @@ export default function LandingPage() {
             &mdash; operating 24/7, adapting to data, and improving itself
             without human intervention.
           </p>
+
+          {/* Live stats strip */}
+          {liveData && liveData.hasRealData && (
+            <div className="mt-8 flex items-center gap-6 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-muted-foreground">
+                  <span className="font-bold text-primary tabular-nums">
+                    {liveData.stats.totalTasksCompleted}
+                  </span>{" "}
+                  tasks completed
+                </span>
+              </div>
+              <div className="text-muted-foreground">
+                <span className="font-bold text-primary tabular-nums">
+                  {liveData.agents.filter((a) => a.status === "running").length || liveData.agents.length}
+                </span>{" "}
+                agents{" "}
+                {liveData.agents.some((a) => a.status === "running")
+                  ? "active"
+                  : "online"}
+              </div>
+              {liveData.stats.tasksLast24h > 0 && (
+                <div className="text-muted-foreground">
+                  <span className="font-bold text-primary tabular-nums">
+                    {liveData.stats.tasksLast24h}
+                  </span>{" "}
+                  in last 24h
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Feature grid */}
           <div className="mt-10 grid grid-cols-3 gap-4 max-w-xl">
@@ -94,27 +156,6 @@ export default function LandingPage() {
         </div>
       </main>
 
-      {/* Terminal preview */}
-      <div className="mx-8 mb-8 relative z-10">
-        <div className="terminal-bar p-4 border border-border/30">
-          <div className="terminal-line opacity-60">
-            Initializing Onera Operator v1.0...
-          </div>
-          <div className="terminal-line opacity-60">
-            Loading agents: planner, twitter, outreach, research, report
-          </div>
-          <div className="terminal-line">
-            Agent loop scheduled: every 4 hours
-          </div>
-          <div className="terminal-line">
-            Daily report generation: 6:00 PM
-          </div>
-          <div className="terminal-line cursor-blink">
-            System ready. Awaiting company setup
-          </div>
-        </div>
-      </div>
-
       {/* Footer */}
       <footer className="border-t border-dashed border-border py-6 px-8 relative z-10">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -138,6 +179,69 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Live terminal bar — scrolls real activity from the public API
+// ---------------------------------------------------------------------------
+function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollLeft = el.scrollWidth;
+  }, [liveData]);
+
+  // Build display lines from live data
+  const lines: string[] = [];
+
+  if (liveData) {
+    // Running tasks
+    for (const t of liveData.tasks.filter((t) => t.status === "IN_PROGRESS").slice(0, 2)) {
+      lines.push(`Running: ${t.title}`);
+    }
+
+    // Terminal log lines
+    for (const l of liveData.terminalLines.slice(0, 4)) {
+      lines.push(l.text);
+    }
+
+    // Recent completed
+    for (const t of liveData.tasks.filter((t) => t.status === "COMPLETED").slice(0, 2)) {
+      lines.push(`Done: ${t.title}`);
+    }
+  }
+
+  const display =
+    lines.length > 0
+      ? lines
+      : [
+          "Initializing OneraOS...",
+          "Agents online: planner, twitter, outreach, research",
+          "System ready",
+        ];
+
+  return (
+    <div
+      ref={scrollRef}
+      className="terminal-bar px-6 py-1.5 shrink-0 overflow-x-auto overflow-y-hidden scrollbar-thin relative z-10"
+    >
+      <div className="flex items-center gap-4 whitespace-nowrap">
+        {display.slice(-6).map((line, i) => (
+          <span
+            key={i}
+            className={`terminal-line inline ${
+              i === display.slice(-6).length - 1 ? "opacity-90" : "opacity-50"
+            }`}
+          >
+            {line}
+          </span>
+        ))}
+        <span className="animate-blink opacity-70">_</span>
+      </div>
     </div>
   );
 }
