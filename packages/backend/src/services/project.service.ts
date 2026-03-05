@@ -113,6 +113,7 @@ export async function buildProjectContext(
 ): Promise<string> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
+    include: { user: { select: { email: true, name: true } } },
   });
 
   if (!project) {
@@ -126,6 +127,8 @@ export async function buildProjectContext(
   if (project.targetUsers) parts.push(`Target Users: ${project.targetUsers}`);
   if (project.website) parts.push(`Website: ${project.website}`);
   if (project.companyEmail) parts.push(`Company Email: ${project.companyEmail}`);
+  if (project.user?.email) parts.push(`Founder Email: ${project.user.email}`);
+  if (project.user?.name) parts.push(`Founder Name: ${project.user.name}`);
 
   if (project.competitors) {
     try {

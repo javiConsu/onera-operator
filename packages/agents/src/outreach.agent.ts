@@ -43,7 +43,9 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "4. Only after review passes, use sendEmail to deliver. " +
       "ALWAYS set the 'from' parameter to the Company Email from the startup context (e.g. companyname@onera.app). " +
       "This ensures the email comes from the company's own address, not a generic one.\n" +
-      "5. If sendEmail returns status 'rejected', read the failures, fix the issues, and retry.\n\n" +
+      "5. ALWAYS set the 'replyTo' parameter to the Founder Email from the startup context. " +
+      "This ensures replies go to the founder's real inbox, not the send-only company address.\n" +
+      "6. If sendEmail returns status 'rejected', read the failures, fix the issues, and retry.\n\n" +
       "Be strategic about who to reach out to and personalize each email. " +
       "If you have the recipient's company URL from findLeads, pass it as recipientCompanyUrl to generateEmail.",
     tools: {

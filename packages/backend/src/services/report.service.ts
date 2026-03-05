@@ -159,6 +159,7 @@ export async function sendDailyDigestEmail(params: {
       recipients: {
         to: [{ address: ownerEmail }],
       },
+      replyTo: [{ address: ownerEmail }],
     });
 
     const result = await poller.pollUntilDone();

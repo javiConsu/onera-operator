@@ -32,6 +32,7 @@ async function sendTransactionalEmail(params: {
   subject: string;
   html: string;
   plainText: string;
+  replyTo?: string;
 }): Promise<boolean> {
   const client = getEmailClient();
   if (!client) {
@@ -52,6 +53,9 @@ async function sendTransactionalEmail(params: {
       recipients: {
         to: [{ address: params.to }],
       },
+      ...(params.replyTo && {
+        replyTo: [{ address: params.replyTo }],
+      }),
     });
 
     const result = await poller.pollUntilDone();
@@ -327,5 +331,6 @@ Onera Operator
     subject,
     html,
     plainText,
+    replyTo: ownerEmail,
   });
 }
