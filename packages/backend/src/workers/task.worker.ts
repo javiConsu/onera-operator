@@ -10,8 +10,13 @@ import {
 import {
   buildProjectContext,
   getProjectOwner,
-  deductCredits,
 } from "../services/project.service.js";
+import {
+  deductCreditsForTask,
+  canPostTweet,
+  attemptAutoCharge,
+  ACTION_CREDITS,
+} from "../services/billing.service.js";
 import { getExecutionAgent, AGENT_DISPLAY_NAMES } from "@onera/agents";
 
 /**
@@ -41,24 +46,68 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         lastError: null,
       });
 
+      // Tweet rate limit: 3 per day per project
+      if (agentName === "twitter") {
+        const allowed = await canPostTweet(projectId);
+        if (!allowed) {
+          console.log(
+            `[task-worker] Tweet limit reached for project ${projectId}, skipping "${taskTitle}"`
+          );
+          await updateTaskStatus(
+            taskId,
+            "FAILED",
+            JSON.stringify({ error: "Daily tweet limit reached (3/day). Will retry tomorrow." })
+          );
+          await upsertAgentStatus(agentName, displayName, { status: "idle" });
+          return;
+        }
+      }
+
       // Check and deduct credits — only on first attempt to avoid double-charging on retry
       if (job.attemptsMade === 0) {
         const userId = await getProjectOwner(projectId);
-        const taskCredits = await getTaskCredits(taskId);
+        const creditCost = ACTION_CREDITS[agentName] || await getTaskCredits(taskId);
         if (userId) {
-          const deducted = await deductCredits(userId, taskCredits);
-          if (!deducted) {
+          const result = await deductCreditsForTask(
+            userId,
+            creditCost,
+            taskId,
+            `${displayName}: ${taskTitle}`
+          );
+          if (!result.success) {
             console.log(
-              `[task-worker] Insufficient credits for task "${taskTitle}"`
+              `[task-worker] Insufficient credits (${result.remainingCredits}) for task "${taskTitle}" (needs ${creditCost}), attempting auto-charge...`
             );
-            await updateTaskStatus(
-              taskId,
-              "FAILED",
-              JSON.stringify({ error: "Insufficient credits" })
-            );
-            // Reset agent status — was set to "running" above
-            await upsertAgentStatus(agentName, displayName, { status: "idle" });
-            return;
+
+            // Attempt auto-charge
+            const autoCharge = await attemptAutoCharge(userId);
+            if (autoCharge.success) {
+              // Retry deduction after auto-charge
+              const retry = await deductCreditsForTask(
+                userId,
+                creditCost,
+                taskId,
+                `${displayName}: ${taskTitle}`
+              );
+              if (!retry.success) {
+                await updateTaskStatus(
+                  taskId,
+                  "FAILED",
+                  JSON.stringify({ error: "Insufficient credits even after auto-charge. Please purchase more credits." })
+                );
+                await upsertAgentStatus(agentName, displayName, { status: "idle" });
+                return;
+              }
+              // Auto-charge succeeded + deduction succeeded, continue execution
+            } else {
+              await updateTaskStatus(
+                taskId,
+                "FAILED",
+                JSON.stringify({ error: "Insufficient credits. Please purchase more credits to continue." })
+              );
+              await upsertAgentStatus(agentName, displayName, { status: "idle" });
+              return;
+            }
           }
         }
       }

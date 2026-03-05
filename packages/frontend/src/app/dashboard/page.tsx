@@ -125,6 +125,7 @@ export default function DashboardPage() {
             projectName={selectedProject?.name || ""}
             projectId={selectedProject?.id}
             credits={credits}
+            userId={user?.id}
             projectWebsite={selectedProject?.website}
             projectDescription={selectedProject?.description}
           />

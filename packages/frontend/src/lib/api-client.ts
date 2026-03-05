@@ -106,6 +106,20 @@ export const api = {
       fetchApi<{ credits: number }>(`/api/users/${encodeURIComponent(userId)}/credits`),
   },
 
+  billing: {
+    summary: (userId: string) =>
+      fetchApi<BillingSummary>(`/api/billing/${encodeURIComponent(userId)}`),
+    history: (userId: string, limit?: number) =>
+      fetchApi<{ transactions: CreditTransaction[] }>(
+        `/api/billing/${encodeURIComponent(userId)}/history${limit ? `?limit=${limit}` : ""}`
+      ),
+    purchase: (userId: string, packSlug: string) =>
+      fetchApi<{ checkoutUrl: string }>("/api/billing/purchase", {
+        method: "POST",
+        body: JSON.stringify({ userId, packSlug }),
+      }),
+  },
+
   loop: {
     trigger: (projectId?: string) =>
       fetchApi<{ message: string }>("/api/loop/trigger", {
@@ -289,6 +303,40 @@ export interface PublicLiveData {
     activeProjects: number;
   };
   hasRealData: boolean;
+}
+
+// ─── Billing types ───────────────────────────────────────────────────────────
+
+export interface CreditPack {
+  slug: string;
+  name: string;
+  credits: number;
+  price: number; // in dollars
+}
+
+export interface CreditTransaction {
+  id: string;
+  userId: string;
+  type: string;
+  amount: number;
+  balance: number;
+  description: string;
+  dodoPaymentId: string | null;
+  packSlug: string | null;
+  taskId: string | null;
+  createdAt: string;
+}
+
+export interface BillingSummary {
+  credits: number;
+  trialActivated: boolean;
+  trialActive: boolean;
+  trialExpired: boolean;
+  trialEndsAt: string | null;
+  hasCard: boolean;
+  autoChargeEnabled: boolean;
+  recentTransactions: CreditTransaction[];
+  packs: CreditPack[];
 }
 
 export const publicApi = {

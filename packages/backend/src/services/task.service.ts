@@ -61,6 +61,7 @@ export async function createManyTasks(
     priority: TaskPriority;
     automatable?: boolean;
     agentName?: string;
+    credits?: number;
   }>
 ) {
   return prisma.task.createMany({ data: tasks });

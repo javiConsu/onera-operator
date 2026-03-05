@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { api, type TaskMetrics, type AgentStatus, type Project } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { BillingSection } from "./billing-section";
 
 interface CompanyPanelProps {
   projectName: string;
   projectId?: string;
   credits: number;
+  userId?: string;
   projectWebsite?: string | null;
   projectDescription?: string | null;
 }
@@ -20,6 +22,7 @@ export function CompanyPanel({
   projectName,
   projectId,
   credits,
+  userId,
   projectWebsite,
   projectDescription,
 }: CompanyPanelProps) {
@@ -233,15 +236,19 @@ export function CompanyPanel({
         </CollapsibleSection>
       )}
 
-      {/* Credits */}
-      <div className="border border-dashed border-border p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Credits
-          </span>
-          <span className="text-lg font-bold text-primary">{credits}</span>
+      {/* Billing & Credits */}
+      {userId ? (
+        <BillingSection userId={userId} />
+      ) : (
+        <div className="border border-dashed border-border p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Credits
+            </span>
+            <span className="text-lg font-bold text-primary">{credits}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Run agent loop button */}
       <Button

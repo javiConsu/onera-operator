@@ -10,17 +10,49 @@ generator client {
 // ─── Auth ────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id // Clerk user ID
-  name      String?
-  email     String?  @unique
-  image     String?
-  credits   Int      @default(100) // Free starting credits
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String    @id // Clerk user ID
+  name             String?
+  email            String?   @unique
+  image            String?
+  credits          Int       @default(0) // Credits balance (0 until trial activated)
+  dodoCustomerId   String?   @unique @map("dodo_customer_id")
+  trialActivated   Boolean   @default(false) @map("trial_activated")
+  trialEndsAt      DateTime? @map("trial_ends_at")
+  autoChargeEnabled Boolean  @default(true) @map("auto_charge_enabled")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  projects Project[]
+  projects          Project[]
+  creditTransactions CreditTransaction[]
 
   @@map("users")
+}
+
+model CreditTransaction {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            CreditTransactionType
+  amount          Int      // positive = credit added, negative = credit deducted
+  balance         Int      // balance after transaction
+  description     String
+  dodoPaymentId   String?  @map("dodo_payment_id")
+  packSlug        String?  @map("pack_slug") // e.g. "growth-500", "scale-2000"
+  taskId          String?  @map("task_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("credit_transactions")
+}
+
+enum CreditTransactionType {
+  TRIAL_BONUS    // 50 free credits on card add
+  PURCHASE       // Bought a credit pack
+  AUTO_CHARGE    // Auto-charged when credits ran out
+  TASK_DEDUCTION // Credits deducted for a task
+  REFUND         // Refund from failed task
+  MANUAL         // Admin adjustment
 }
 
 // ─── Core Models ─────────────────────────────────────────────────
@@ -59,7 +91,7 @@ model Task {
   automatable  Boolean      @default(false)
   agentName    String?      @map("agent_name")
   result       String?
-  credits      Int          @default(1) // Credits consumed by this task
+  credits      Int          @default(1) // Credits: tweet=3, email/research/eng=5, plan=1
   scheduledFor DateTime?    @map("scheduled_for")
   scheduledAt  String?      @map("scheduled_at") // e.g. "Tonight", "Weekdays"
   completedAt  DateTime?    @map("completed_at")

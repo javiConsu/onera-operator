@@ -10,6 +10,7 @@ import { chatRoutes } from "./routes/chat.js";
 import { loopRoutes } from "./routes/loop.js";
 import { userRoutes } from "./routes/users.js";
 import { publicRoutes } from "./routes/public.js";
+import { billingRoutes } from "./routes/billing.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -35,6 +36,7 @@ export async function buildServer() {
   await app.register(loopRoutes);
   await app.register(userRoutes);
   await app.register(publicRoutes);
+  await app.register(billingRoutes);
 
   return app;
 }

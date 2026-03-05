@@ -60,6 +60,9 @@ importers:
 
   packages/backend:
     dependencies:
+      '@dodopayments/fastify':
+        specifier: ^0.2.5
+        version: 0.2.5(fastify@5.7.4)(zod@3.25.76)
       '@fastify/cors':
         specifier: ^10.0.0
         version: 10.1.0
@@ -87,6 +90,9 @@ importers:
       bullmq:
         specifier: ^5.30.0
         version: 5.70.1
+      dodopayments:
+        specifier: ^2.23.0
+        version: 2.23.0
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -371,6 +377,17 @@ packages:
     resolution: {integrity: sha512-ARBt64yEyKbanyRETTjcjJuHr2YXorzQo0etyS5+P6oSeW8xEuzajA9g+zDnMcj1hlX2dQE93foIWQGfpru7gQ==}
     peerDependencies:
       '@bufbuild/protobuf': ^2.2.0
+
+  '@dodopayments/core@0.3.9':
+    resolution: {integrity: sha512-vQR2zgOsiPy4CANrpFbLJ7fZRidi4Oo4a4N5F22BOngrGZPUMOzr8YuxOFuwycrOz4Rucdo9Sr4N2b37vyjBBQ==}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
+  '@dodopayments/fastify@0.2.5':
+    resolution: {integrity: sha512-LcnJI7iwwJRiaytwOwr16YigtKSdjw02P++uhokDx72TVXvhSG0HKlQvRumoplSwpCPKyhgRuS3/J7IWnzPtvw==}
+    peerDependencies:
+      fastify: ^5.4.0
+      zod: ^3.25.0 || ^4.0.0
 
   '@e2b/code-interpreter@2.3.3':
     resolution: {integrity: sha512-WOpSwc1WpvxyOijf6WMbR76BUuvd2O9ddXgCHHi65lkuy6YgQGq7oyd8PNsT331O9Tqbccjy6uF4xanSdLX1UA==}
@@ -1570,6 +1587,10 @@ packages:
   dockerfile-ast@0.7.1:
     resolution: {integrity: sha512-oX/A4I0EhSkGqrFv0YuvPkBUSYp1XiY8O8zAKc8Djglx8ocz+JfOr8gP0ryRMC2myqvDLagmnZaU9ot1vG2ijw==}
 
+  dodopayments@2.23.0:
+    resolution: {integrity: sha512-LjW6sojsN+N2hkO3Kyybl1MjmMs24CEzjVHW9lBI/0IFbozzHjFC7k0XJ67Tx3manFiyhIziwf3xhzjax4hB0g==}
+    hasBin: true
+
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
@@ -2717,6 +2738,18 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 2.11.0
 
+  '@dodopayments/core@0.3.9(zod@3.25.76)':
+    dependencies:
+      dodopayments: 2.23.0
+      standardwebhooks: 1.0.0
+      zod: 3.25.76
+
+  '@dodopayments/fastify@0.2.5(fastify@5.7.4)(zod@3.25.76)':
+    dependencies:
+      '@dodopayments/core': 0.3.9(zod@3.25.76)
+      fastify: 5.7.4
+      zod: 3.25.76
+
   '@e2b/code-interpreter@2.3.3':
     dependencies:
       e2b: 2.13.0
@@ -3719,6 +3752,10 @@ snapshots:
     dependencies:
       vscode-languageserver-textdocument: 1.0.12
       vscode-languageserver-types: 3.17.5
+
+  dodopayments@2.23.0:
+    dependencies:
+      standardwebhooks: 1.0.0
 
   dotenv@16.6.1: {}
 

@@ -60,7 +60,7 @@ export async function ensureUser(data: {
       email: data.email,
       name: data.name,
       image: data.image,
-      credits: 100,
+      credits: 0,
     },
     update: {
       name: data.name,

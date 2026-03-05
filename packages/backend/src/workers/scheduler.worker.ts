@@ -14,6 +14,7 @@ import {
   listTasks,
 } from "../services/task.service.js";
 import { upsertAgentStatus } from "../services/execution.service.js";
+import { ACTION_CREDITS } from "../services/billing.service.js";
 import type { TaskCategory, TaskPriority } from "@onera/database";
 
 /**
@@ -136,6 +137,7 @@ async function runAgentLoop(specificProjectId?: string) {
             priority: t.priority as TaskPriority,
             automatable: t.automatable,
             agentName: t.agentName ?? undefined,
+            credits: t.agentName ? (ACTION_CREDITS[t.agentName] ?? 1) : 1,
           }))
         );
 
