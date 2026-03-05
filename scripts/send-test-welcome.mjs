@@ -53,8 +53,8 @@ COO for ${projectName}`;
 const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background: #ffffff;">
-  <div style="max-width: 560px; margin: 0 auto; padding: 32px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.65;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.65;">
+  <div style="max-width: 560px; padding: 20px;">
     Hey ${ownerName},<br><br>
     I just finished going through <a href="${website}" style="color: #0033CC;">${projectName}</a> and I'm ready to get to work.<br><br>
     Your company email is set up: <strong>${companyEmail}</strong>. All outreach and updates will come from this address.<br><br>
