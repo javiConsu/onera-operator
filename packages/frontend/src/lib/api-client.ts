@@ -113,8 +113,8 @@ export const api = {
       fetchApi<{ transactions: CreditTransaction[] }>(
         `/api/billing/${encodeURIComponent(userId)}/history${limit ? `?limit=${limit}` : ""}`
       ),
-    getStarted: (userId: string) =>
-      fetchApi<{ checkoutUrl: string }>("/api/billing/get-started", {
+    subscribe: (userId: string) =>
+      fetchApi<{ checkoutUrl: string }>("/api/billing/subscribe", {
         method: "POST",
         body: JSON.stringify({ userId }),
       }),
@@ -334,6 +334,10 @@ export interface CreditTransaction {
 
 export interface BillingSummary {
   credits: number;
+  hasSubscription: boolean;
+  subscriptionStatus: string | null;
+  isTrialing: boolean;
+  trialEndsAt: string | null;
   hasCard: boolean;
   autoChargeEnabled: boolean;
   recentTransactions: CreditTransaction[];

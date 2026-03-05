@@ -12,7 +12,7 @@ interface BillingSectionProps {
 export function BillingSection({ userId }: BillingSectionProps) {
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [gettingStarted, setGettingStarted] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBilling = useCallback(async () => {
@@ -30,16 +30,16 @@ export function BillingSection({ userId }: BillingSectionProps) {
     return () => clearInterval(interval);
   }, [fetchBilling]);
 
-  async function handleGetStarted() {
-    setGettingStarted(true);
+  async function handleSubscribe() {
+    setSubscribing(true);
     setError(null);
     try {
-      const { checkoutUrl } = await api.billing.getStarted(userId);
+      const { checkoutUrl } = await api.billing.subscribe(userId);
       window.open(checkoutUrl, "_blank");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start checkout");
+      setError(err instanceof Error ? err.message : "Failed to start subscription");
     } finally {
-      setGettingStarted(false);
+      setSubscribing(false);
     }
   }
 
@@ -69,8 +69,8 @@ export function BillingSection({ userId }: BillingSectionProps) {
     );
   }
 
-  // ─── No card yet: show get-started gate ────────────────────────
-  if (!billing.hasCard) {
+  // ─── No subscription yet: show free trial gate ────────────────
+  if (!billing.hasSubscription) {
     return (
       <div className="space-y-3">
         <div className="border border-dashed border-border p-4">
@@ -82,19 +82,19 @@ export function BillingSection({ userId }: BillingSectionProps) {
           </div>
           <div className="border-t border-dashed border-border pt-3">
             <p className="text-[11px] font-semibold text-foreground mb-1">
-              Get started with 550 credits
+              Start your free trial
             </p>
             <p className="text-[9px] text-muted-foreground mb-3 leading-relaxed">
-              Buy the Growth pack ($29) and get 50 bonus credits free.
-              That&apos;s 550 credits to power your AI agents.
+              Get 50 credits free for 3 days. After that, $29/mo for 500
+              credits. Cancel anytime.
             </p>
             <Button
               size="sm"
               className="w-full text-[10px] uppercase tracking-wider"
-              onClick={handleGetStarted}
-              disabled={gettingStarted}
+              onClick={handleSubscribe}
+              disabled={subscribing}
             >
-              {gettingStarted ? "Opening checkout..." : "Get Started — $29 for 550 Credits"}
+              {subscribing ? "Opening checkout..." : "Start Free Trial — 50 Credits"}
             </Button>
             {error && (
               <p className="text-[9px] text-destructive mt-2">{error}</p>
@@ -102,27 +102,52 @@ export function BillingSection({ userId }: BillingSectionProps) {
           </div>
         </div>
 
-        {/* Show what 550 credits gets you */}
+        {/* Show what you get */}
         <div className="border border-dashed border-border p-3">
           <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-2">
-            550 credits gets you
+            What&apos;s included
           </p>
           <div className="space-y-1 text-[9px] text-muted-foreground">
             <div className="flex justify-between">
-              <span>~183 tweets posted</span>
-              <span className="text-foreground">3 cr each</span>
+              <span>3-day free trial</span>
+              <span className="text-green-500">50 credits</span>
             </div>
             <div className="flex justify-between">
-              <span>~110 outreach emails</span>
-              <span className="text-foreground">5 cr each</span>
-            </div>
-            <div className="flex justify-between">
-              <span>~110 research tasks</span>
-              <span className="text-foreground">5 cr each</span>
+              <span>Then $29/month</span>
+              <span className="text-foreground">500 credits</span>
             </div>
             <div className="flex justify-between">
               <span>Reports & chat</span>
-              <span className="text-green-500">free</span>
+              <span className="text-green-500">always free</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Cancel anytime</span>
+              <span className="text-foreground">no lock-in</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit costs */}
+        <div className="border border-dashed border-border p-3">
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-2">
+            Credit costs
+          </p>
+          <div className="space-y-1 text-[9px] text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Tweet</span>
+              <span className="text-foreground">3 credits</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Outreach email</span>
+              <span className="text-foreground">5 credits</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Research / Engineering</span>
+              <span className="text-foreground">5 credits</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Planning</span>
+              <span className="text-foreground">1 credit</span>
             </div>
           </div>
         </div>
@@ -130,7 +155,7 @@ export function BillingSection({ userId }: BillingSectionProps) {
     );
   }
 
-  // ─── Has card: show balance + top up ──────────────────────────
+  // ─── Has subscription: show balance + status + top up ─────────
   return (
     <div className="space-y-3">
       {/* Credit balance */}
@@ -152,6 +177,29 @@ export function BillingSection({ userId }: BillingSectionProps) {
           </span>
         </div>
 
+        {/* Subscription status */}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-border">
+          <span className="text-[9px] text-muted-foreground">Subscription</span>
+          {billing.isTrialing && billing.trialEndsAt ? (
+            <span className="text-[9px] text-blue-400">
+              Trial ends {new Date(billing.trialEndsAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          ) : billing.subscriptionStatus === "active" ? (
+            <span className="text-[9px] text-green-500">Active — $29/mo</span>
+          ) : billing.subscriptionStatus === "cancelled" ? (
+            <span className="text-[9px] text-red-400">Cancelled</span>
+          ) : billing.subscriptionStatus === "on_hold" ? (
+            <span className="text-[9px] text-yellow-500">On Hold</span>
+          ) : (
+            <span className="text-[9px] text-muted-foreground">
+              {billing.subscriptionStatus ?? "Unknown"}
+            </span>
+          )}
+        </div>
+
         {billing.credits <= 10 && billing.credits > 0 && (
           <p className="text-[9px] text-yellow-500 mt-2 pt-2 border-t border-dashed border-border">
             Low credits — top up to keep agents running
@@ -164,7 +212,7 @@ export function BillingSection({ userId }: BillingSectionProps) {
         )}
       </div>
 
-      {/* Credit packs */}
+      {/* Credit packs (top-up) */}
       <CollapsibleSection title="Top Up" defaultOpen={billing.credits <= 20}>
         <div className="space-y-1.5">
           {billing.packs.map((pack: CreditPack) => (
@@ -226,14 +274,6 @@ export function BillingSection({ userId }: BillingSectionProps) {
             ))}
           </div>
         </CollapsibleSection>
-      )}
-
-      {/* Auto-charge indicator */}
-      {billing.autoChargeEnabled && (
-        <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-          <span>Auto-charge</span>
-          <span className="text-green-500">ON — $29/500cr when empty</span>
-        </div>
       )}
     </div>
   );

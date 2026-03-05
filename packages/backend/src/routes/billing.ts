@@ -1,13 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { Webhooks } from "@dodopayments/fastify";
 import {
-  activateCard,
+  activateSubscription,
+  handleSubscriptionRenewal,
+  updateSubscriptionStatus,
   addCredits,
   getBillingSummary,
   getCreditHistory,
   CREDIT_PACKS,
-  AUTO_CHARGE_PACK,
-  CARD_BONUS_CREDITS,
+  SUBSCRIPTION_PRODUCT_ID,
+  TRIAL_PERIOD_DAYS,
 } from "../services/billing.service.js";
 import { prisma } from "@onera/database";
 
@@ -17,59 +19,64 @@ const DODO_API_BASE = DODO_ENV === "live_mode"
   : "https://test.dodopayments.com";
 
 export async function billingRoutes(app: FastifyInstance) {
-  // ─── Get Started: Buy Growth pack + get 50 bonus credits ──────
-  // New users have 0 credits. Their first action is buying the Growth pack.
-  // On first purchase, they also get CARD_BONUS_CREDITS (50) free on top.
+  // ─── Subscribe: Start free trial ($29/mo after 3 days) ────────
+  // Creates a DodoPayments checkout session for the subscription product.
+  // User gets 50 bonus credits immediately on subscription activation.
+  // After 3-day trial, $29/mo auto-charges and grants 500 credits.
   app.post<{
     Body: { userId: string };
-  }>("/api/billing/get-started", async (request, reply) => {
+  }>("/api/billing/subscribe", async (request, reply) => {
     const { userId } = request.body;
-    const starterPack = CREDIT_PACKS[0]; // Growth $29/500
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, name: true, dodoCustomerId: true },
+      select: { email: true, name: true, dodoCustomerId: true, dodoSubscriptionId: true },
     });
     if (!user) {
       return reply.code(404).send({ error: "User not found" });
     }
 
-    const response = await fetch(`${DODO_API_BASE}/payments`, {
+    // Already has an active subscription
+    if (user.dodoSubscriptionId) {
+      return reply.code(400).send({ error: "Already subscribed" });
+    }
+
+    // Use Checkout Sessions API (recommended over deprecated /subscriptions)
+    const response = await fetch(`${DODO_API_BASE}/checkouts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.DODO_PAYMENTS_API_KEY}`,
       },
       body: JSON.stringify({
-        billing: { country: "US" },
+        product_cart: [{ product_id: SUBSCRIPTION_PRODUCT_ID, quantity: 1 }],
         customer: {
           ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
           name: user.name || "OneraOS User",
         },
-        product_cart: [{ product_id: starterPack.dodoProductId, quantity: 1 }],
-        payment_link: true,
-        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?purchase=success&pack=${starterPack.slug}`,
+        subscription_data: {
+          trial_period_days: TRIAL_PERIOD_DAYS,
+        },
         metadata: {
           userId,
-          packSlug: starterPack.slug,
-          type: "credit_pack",
-          isFirstPurchase: user.dodoCustomerId ? "false" : "true",
+          type: "subscription",
         },
+        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?subscription=success`,
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      app.log.error({ err }, "DodoPayments get-started checkout failed");
-      return reply.code(500).send({ error: "Payment creation failed" });
+      app.log.error({ err }, "DodoPayments subscription checkout failed");
+      return reply.code(500).send({ error: "Subscription checkout failed" });
     }
 
-    const data = await response.json() as { payment_link: string };
-    return reply.send({ checkoutUrl: data.payment_link });
+    const data = await response.json() as { checkout_url: string; session_id: string };
+    return reply.send({ checkoutUrl: data.checkout_url });
   });
 
-  // ─── Purchase credit pack ─────────────────────────────────────
+  // ─── Purchase credit pack (one-time top-up) ───────────────────
   app.post<{
     Body: { userId: string; packSlug: string };
   }>("/api/billing/purchase", async (request, reply) => {
@@ -88,28 +95,25 @@ export async function billingRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "User not found" });
     }
 
-    const response = await fetch(`${DODO_API_BASE}/payments`, {
+    const response = await fetch(`${DODO_API_BASE}/checkouts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.DODO_PAYMENTS_API_KEY}`,
       },
       body: JSON.stringify({
-        billing: { country: "US" },
+        product_cart: [{ product_id: pack.dodoProductId, quantity: 1 }],
         customer: {
           ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
           name: user.name || "OneraOS User",
         },
-        product_cart: [{ product_id: pack.dodoProductId, quantity: 1 }],
-        payment_link: true,
-        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?purchase=success&pack=${packSlug}`,
         metadata: {
           userId,
           packSlug,
           type: "credit_pack",
-          isFirstPurchase: user.dodoCustomerId ? "false" : "true",
         },
+        return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard?purchase=success&pack=${packSlug}`,
       }),
     });
 
@@ -119,8 +123,8 @@ export async function billingRoutes(app: FastifyInstance) {
       return reply.code(500).send({ error: "Payment creation failed" });
     }
 
-    const data = await response.json() as { payment_link: string };
-    return reply.send({ checkoutUrl: data.payment_link });
+    const data = await response.json() as { checkout_url: string; session_id: string };
+    return reply.send({ checkoutUrl: data.checkout_url });
   });
 
   // ─── Webhook: Handle DodoPayments events ──────────────────────
@@ -138,23 +142,82 @@ export async function billingRoutes(app: FastifyInstance) {
       Webhooks({
         webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY!,
 
+        // ── Subscription lifecycle ──────────────────────────────
+        onSubscriptionActive: async (payload) => {
+          app.log.info({ payload }, "DodoPayments: subscription active");
+          const data = payload.data as Record<string, unknown>;
+          const metadata = (data.metadata || {}) as Record<string, string>;
+          const subscriptionId = data.subscription_id as string;
+          const customerId = data.customer_id as string;
+          const userId = metadata.userId;
+
+          if (!userId) return;
+
+          // Activate subscription: link customer, set trial, give 50 bonus credits
+          await activateSubscription(userId, customerId, subscriptionId);
+          app.log.info({ userId, subscriptionId }, "Subscription activated with trial credits");
+        },
+
+        onSubscriptionCancelled: async (payload) => {
+          app.log.info({ payload }, "DodoPayments: subscription cancelled");
+          const data = payload.data as Record<string, unknown>;
+          const metadata = (data.metadata || {}) as Record<string, string>;
+          const userId = metadata.userId;
+
+          if (!userId) {
+            // Try to find user by subscription_id
+            const subscriptionId = data.subscription_id as string;
+            if (subscriptionId) {
+              const user = await prisma.user.findUnique({
+                where: { dodoSubscriptionId: subscriptionId },
+                select: { id: true },
+              });
+              if (user) {
+                await updateSubscriptionStatus(user.id, "cancelled");
+              }
+            }
+            return;
+          }
+
+          await updateSubscriptionStatus(userId, "cancelled");
+        },
+
+        // ── Payment events (for renewals + one-time packs) ─────
         onPaymentSucceeded: async (payload) => {
           app.log.info({ payload }, "DodoPayments: payment succeeded");
           const data = payload.data as Record<string, unknown>;
           const metadata = (data.metadata || {}) as Record<string, string>;
           const paymentId = data.payment_id as string;
           const customerId = data.customer_id as string;
+          const subscriptionId = data.subscription_id as string | undefined;
 
           const userId = metadata.userId;
-          if (!userId) return;
+          if (!userId) {
+            // Try to find user by subscription ID (for renewals without metadata)
+            if (subscriptionId) {
+              const user = await prisma.user.findUnique({
+                where: { dodoSubscriptionId: subscriptionId },
+                select: { id: true },
+              });
+              if (user) {
+                await handleSubscriptionRenewal(user.id, paymentId);
+                app.log.info({ userId: user.id }, "Subscription renewal credits added (via sub ID)");
+              }
+            }
+            return;
+          }
 
           if (metadata.type === "credit_pack") {
+            // One-time credit pack purchase
             const packSlug = metadata.packSlug;
             const pack = CREDIT_PACKS.find((p) => p.slug === packSlug);
 
-            // Link customer + grant 50 bonus on first purchase
+            // Link customer if needed
             if (customerId) {
-              await activateCard(userId, customerId).catch(() => {});
+              await prisma.user.update({
+                where: { id: userId },
+                data: { dodoCustomerId: customerId },
+              }).catch(() => {});
             }
 
             if (pack) {
@@ -164,32 +227,22 @@ export async function billingRoutes(app: FastifyInstance) {
                 dodoPaymentId: paymentId,
                 packSlug: pack.slug,
               });
-              app.log.info({ userId, pack: pack.slug }, "Credits added from purchase");
+              app.log.info({ userId, pack: pack.slug }, "Credit pack purchased");
             }
-          } else if (metadata.type === "auto_charge") {
-            if (customerId) {
-              await activateCard(userId, customerId).catch(() => {});
+          } else if (subscriptionId) {
+            // Subscription payment (monthly renewal after trial ends)
+            // The first payment during trial is $0, subsequent ones are $29
+            const paymentAmount = data.total_amount as number | undefined;
+
+            if (paymentAmount && paymentAmount > 0) {
+              await handleSubscriptionRenewal(userId, paymentId);
+              app.log.info({ userId }, "Subscription renewal credits added");
             }
-            await addCredits(userId, AUTO_CHARGE_PACK.credits, {
-              type: "AUTO_CHARGE",
-              description: `Auto-charged: ${AUTO_CHARGE_PACK.credits} credits ($${AUTO_CHARGE_PACK.price / 100})`,
-              dodoPaymentId: paymentId,
-              packSlug: AUTO_CHARGE_PACK.slug,
-            });
-            app.log.info({ userId }, "Auto-charge credits added");
           }
         },
 
         onPaymentFailed: async (payload) => {
           app.log.warn({ payload }, "DodoPayments: payment failed");
-        },
-
-        onSubscriptionActive: async (payload) => {
-          app.log.info({ payload }, "DodoPayments: subscription active");
-        },
-
-        onSubscriptionCancelled: async (payload) => {
-          app.log.info({ payload }, "DodoPayments: subscription cancelled");
         },
       })
     );

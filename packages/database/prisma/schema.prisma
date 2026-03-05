@@ -14,11 +14,13 @@ model User {
   name             String?
   email            String?   @unique
   image            String?
-  credits          Int       @default(0) // 0 until card added, then 50 free
-  dodoCustomerId   String?   @unique @map("dodo_customer_id")
-  trialActivated   Boolean   @default(false) @map("trial_activated")
-  trialEndsAt      DateTime? @map("trial_ends_at")
-  autoChargeEnabled Boolean  @default(true) @map("auto_charge_enabled")
+  credits            Int       @default(0)
+  dodoCustomerId     String?   @unique @map("dodo_customer_id")
+  dodoSubscriptionId String?   @unique @map("dodo_subscription_id")
+  subscriptionStatus String?   @map("subscription_status") // "active" | "on_hold" | "cancelled" | "expired" | "trialing"
+  trialActivated     Boolean   @default(false) @map("trial_activated")
+  trialEndsAt        DateTime? @map("trial_ends_at")
+  autoChargeEnabled  Boolean   @default(true) @map("auto_charge_enabled")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
@@ -47,12 +49,13 @@ model CreditTransaction {
 }
 
 enum CreditTransactionType {
-  CARD_BONUS     // 50 free credits when user adds card
-  PURCHASE       // Bought a credit pack
-  AUTO_CHARGE    // Auto-charged when credits ran out
-  TASK_DEDUCTION // Credits deducted for a task
-  REFUND         // Refund from failed task
-  MANUAL         // Admin adjustment
+  CARD_BONUS           // 50 free credits when user subscribes (trial start)
+  PURCHASE             // Bought a credit pack (one-time top-up)
+  AUTO_CHARGE          // Auto-charged when credits ran out
+  SUBSCRIPTION_RENEWAL // Monthly subscription renewal (500 credits)
+  TASK_DEDUCTION       // Credits deducted for a task
+  REFUND               // Refund from failed task
+  MANUAL               // Admin adjustment
 }
 
 // ─── Core Models ─────────────────────────────────────────────────
