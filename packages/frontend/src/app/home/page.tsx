@@ -184,7 +184,7 @@ export default function LandingPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Live terminal bar — scrolls real activity from the public API
+// Live terminal bar — vertical multi-line, same style as /live and dashboard
 // ---------------------------------------------------------------------------
 function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -192,24 +192,19 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollLeft = el.scrollWidth;
+    el.scrollTop = el.scrollHeight;
   }, [liveData]);
 
   // Build display lines from live data
   const lines: string[] = [];
 
   if (liveData) {
-    // Running tasks
     for (const t of liveData.tasks.filter((t) => t.status === "IN_PROGRESS").slice(0, 2)) {
       lines.push(`Running: ${t.title}`);
     }
-
-    // Terminal log lines
     for (const l of liveData.terminalLines.slice(0, 4)) {
       lines.push(l.text);
     }
-
-    // Recent completed
     for (const t of liveData.tasks.filter((t) => t.status === "COMPLETED").slice(0, 2)) {
       lines.push(`Done: ${t.title}`);
     }
@@ -221,27 +216,21 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
       : [
           "Initializing OneraOS...",
           "Agents online: planner, twitter, outreach, research",
-          "System ready",
+          "Agent loop scheduled: every 4 hours",
+          "System ready. Awaiting company setup",
         ];
 
   return (
     <div
       ref={scrollRef}
-      className="terminal-bar px-6 py-1.5 shrink-0 overflow-x-auto overflow-y-hidden scrollbar-thin relative z-10"
+      className="terminal-bar px-6 py-1.5 overflow-hidden shrink-0 relative z-10"
+      style={{ maxHeight: 80 }}
     >
-      <div className="flex items-center gap-4 whitespace-nowrap">
-        {display.slice(-6).map((line, i) => (
-          <span
-            key={i}
-            className={`terminal-line inline ${
-              i === display.slice(-6).length - 1 ? "opacity-90" : "opacity-50"
-            }`}
-          >
-            {line}
-          </span>
-        ))}
-        <span className="animate-blink opacity-70">_</span>
-      </div>
+      {display.slice(-6).map((line, i) => (
+        <div key={i} className="terminal-line opacity-80 truncate leading-snug">
+          {line}
+        </div>
+      ))}
     </div>
   );
 }

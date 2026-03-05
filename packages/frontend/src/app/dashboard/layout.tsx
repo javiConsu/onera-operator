@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { TerminalBar } from "@/components/dashboard/terminal-bar";
 
 export default function DashboardLayout({
   children,
@@ -34,6 +35,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Terminal bar at the very top — like the live page */}
+      <TerminalBar />
+
       {/* Navigation header */}
       <header className="border-b border-dashed border-border bg-background">
         <div className="flex h-12 items-center justify-between px-6">
