@@ -65,6 +65,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ status, result }),
       }),
+    execute: (id: string) =>
+      fetchApi<{ message: string; taskId: string; agentName: string }>(
+        `/api/tasks/${id}/execute`,
+        { method: "POST" }
+      ),
     metrics: (projectId: string) =>
       fetchApi<TaskMetrics>(`/api/tasks/metrics?projectId=${projectId}`),
   },
@@ -74,6 +79,11 @@ export const api = {
     logs: (limit?: number) =>
       fetchApi<ExecutionLog[]>(
         `/api/agents/logs${limit ? `?limit=${limit}` : ""}`
+      ),
+    trigger: (name: string, projectId: string) =>
+      fetchApi<{ message: string; queued: number; agentName?: string }>(
+        `/api/agents/${name}/trigger`,
+        { method: "POST", body: JSON.stringify({ projectId }) }
       ),
   },
 

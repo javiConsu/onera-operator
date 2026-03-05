@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { getAgentStatuses } from "../services/execution.service.js";
 import { getRecentExecutionLogs } from "../services/execution.service.js";
-import { getTaskMetrics } from "../services/task.service.js";
+import { getTaskMetrics, getPendingAutomatableTasks } from "../services/task.service.js";
+import { enqueueTaskExecution } from "../queue/task.queue.js";
 import { AGENT_DISPLAY_NAMES } from "@onera/agents";
 import { prisma } from "@onera/database";
 
@@ -81,6 +82,55 @@ export async function agentRoutes(app: FastifyInstance) {
       return reply.send({ lines });
     }
   );
+
+  // Trigger a specific agent — execute all its pending tasks for a project
+  app.post<{
+    Params: { name: string };
+    Body: { projectId: string };
+  }>("/api/agents/:name/trigger", async (request, reply) => {
+    const { name } = request.params;
+    const { projectId } = request.body || {};
+
+    if (!projectId) {
+      return reply.code(400).send({ error: "projectId is required" });
+    }
+
+    // Validate agent name
+    const validAgents = ["twitter", "outreach", "research", "engineer"];
+    if (!validAgents.includes(name)) {
+      return reply.code(400).send({
+        error: `Invalid agent: "${name}". Valid agents: ${validAgents.join(", ")}`,
+      });
+    }
+
+    // Find all pending automatable tasks for this agent + project
+    const allPending = await getPendingAutomatableTasks(projectId);
+    const agentTasks = allPending.filter((t) => t.agentName === name);
+
+    if (agentTasks.length === 0) {
+      return reply.send({
+        message: `No pending tasks for ${AGENT_DISPLAY_NAMES[name] ?? name}`,
+        queued: 0,
+      });
+    }
+
+    // Enqueue all of them
+    for (const task of agentTasks) {
+      await enqueueTaskExecution({
+        taskId: task.id,
+        projectId: task.projectId,
+        agentName: task.agentName!,
+        taskTitle: task.title,
+        taskDescription: task.description,
+      });
+    }
+
+    return reply.send({
+      message: `Triggered ${agentTasks.length} task(s) for ${AGENT_DISPLAY_NAMES[name] ?? name}`,
+      queued: agentTasks.length,
+      agentName: name,
+    });
+  });
 }
 
 function getTimeAgo(date: Date): string {

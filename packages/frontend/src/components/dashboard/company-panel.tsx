@@ -27,6 +27,7 @@ export function CompanyPanel({
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [triggering, setTriggering] = useState(false);
+  const [triggeringAgent, setTriggeringAgent] = useState<string | null>(null);
   const [showIntelligence, setShowIntelligence] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -61,6 +62,21 @@ export function CompanyPanel({
       // ignore
     } finally {
       setTriggering(false);
+      fetchData();
+    }
+  }
+
+  const executableAgents = new Set(["twitter", "outreach", "research", "engineer"]);
+
+  async function handleTriggerAgent(agentName: string) {
+    if (!projectId) return;
+    setTriggeringAgent(agentName);
+    try {
+      await api.agents.trigger(agentName, projectId);
+    } catch {
+      // ignore
+    } finally {
+      setTriggeringAgent(null);
       fetchData();
     }
   }
@@ -162,6 +178,8 @@ export function CompanyPanel({
           {agents.map((agent) => {
             const isRunning = agent.status === "running";
             const isError = agent.status === "error";
+            const canTrigger = executableAgents.has(agent.name) && !isRunning;
+            const isTriggeringThis = triggeringAgent === agent.name;
             return (
               <div key={agent.id} className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -184,9 +202,21 @@ export function CompanyPanel({
                     {agent.displayName}
                   </span>
                 </div>
-                <span className="text-[9px] text-muted-foreground/60 shrink-0">
-                  {agent.tasksCompleted > 0 ? `${agent.tasksCompleted}✓` : agent.lastRunAt ? formatRelativeTime(agent.lastRunAt) : "—"}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {canTrigger && (
+                    <button
+                      onClick={() => handleTriggerAgent(agent.name)}
+                      disabled={isTriggeringThis || !projectId}
+                      className="text-[8px] uppercase tracking-wider font-bold text-primary border border-dashed border-primary/30 px-1.5 py-0.5 hover:bg-primary/10 disabled:opacity-40 transition-colors"
+                      title={`Run all pending ${agent.displayName} tasks`}
+                    >
+                      {isTriggeringThis ? "..." : "Run"}
+                    </button>
+                  )}
+                  <span className="text-[9px] text-muted-foreground/60">
+                    {agent.tasksCompleted > 0 ? `${agent.tasksCompleted}✓` : agent.lastRunAt ? formatRelativeTime(agent.lastRunAt) : "—"}
+                  </span>
+                </div>
               </div>
             );
           })}

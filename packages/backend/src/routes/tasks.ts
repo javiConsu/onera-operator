@@ -7,6 +7,7 @@ import {
   getTaskMetrics,
 } from "../services/task.service.js";
 import { getExecutionLogs } from "../services/execution.service.js";
+import { enqueueTaskExecution } from "../queue/task.queue.js";
 import type { TaskCategory, TaskPriority } from "@onera/database";
 
 export async function taskRoutes(app: FastifyInstance) {
@@ -122,6 +123,45 @@ export async function taskRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const logs = await getExecutionLogs(request.params.id);
       return reply.send(logs);
+    }
+  );
+
+  // Execute a specific task immediately ("Do it now")
+  app.post<{ Params: { id: string } }>(
+    "/api/tasks/:id/execute",
+    async (request, reply) => {
+      const task = await getTask(request.params.id);
+      if (!task) {
+        return reply.code(404).send({ error: "Task not found" });
+      }
+
+      if (task.status === "IN_PROGRESS") {
+        return reply.code(409).send({ error: "Task is already running" });
+      }
+
+      if (task.status === "COMPLETED") {
+        return reply.code(409).send({ error: "Task is already completed" });
+      }
+
+      if (!task.agentName) {
+        return reply
+          .code(400)
+          .send({ error: "Task has no assigned agent — cannot execute automatically" });
+      }
+
+      await enqueueTaskExecution({
+        taskId: task.id,
+        projectId: task.projectId,
+        agentName: task.agentName,
+        taskTitle: task.title,
+        taskDescription: task.description,
+      });
+
+      return reply.send({
+        message: `Task "${task.title}" queued for immediate execution`,
+        taskId: task.id,
+        agentName: task.agentName,
+      });
     }
   );
 

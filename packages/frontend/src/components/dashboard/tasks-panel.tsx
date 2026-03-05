@@ -36,6 +36,7 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [executingIds, setExecutingIds] = useState<Set<string>>(new Set());
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -47,6 +48,26 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
       setLoading(false);
     }
   }, [projectId]);
+
+  const handleExecuteTask = useCallback(
+    async (taskId: string) => {
+      setExecutingIds((prev) => new Set(prev).add(taskId));
+      try {
+        await api.tasks.execute(taskId);
+        // Re-fetch to show updated status
+        fetchTasks();
+      } catch (err) {
+        console.error("Failed to execute task:", err);
+      } finally {
+        setExecutingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+      }
+    },
+    [fetchTasks]
+  );
 
   // Reset loading state when project changes (before new data arrives)
   useEffect(() => {
@@ -108,6 +129,7 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
             onSelect={() =>
               setSelectedTaskId((prev) => (prev === task.id ? null : task.id))
             }
+            onExecute={handleExecuteTask}
           />
         ))}
         {tasks.length === 0 && (
@@ -136,13 +158,17 @@ function TaskCard({
   task,
   isSelected,
   onSelect,
+  onExecute,
 }: {
   task: Task;
   isSelected: boolean;
   onSelect: () => void;
+  onExecute?: (taskId: string) => void;
 }) {
   const isRunning = task.status === "IN_PROGRESS";
   const elapsed = useElapsedTime(task.updatedAt, isRunning);
+  const canExecute =
+    (task.status === "PENDING" || task.status === "FAILED") && !!task.agentName;
 
   const statusColor = (() => {
     switch (task.status) {
@@ -180,9 +206,23 @@ function TaskCard({
       }`}
       onClick={onSelect}
     >
-      <h4 className="font-bold text-sm leading-tight text-foreground">
-        {task.title}
-      </h4>
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-bold text-sm leading-tight text-foreground flex-1">
+          {task.title}
+        </h4>
+        {canExecute && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onExecute?.(task.id);
+            }}
+            className="shrink-0 text-[9px] uppercase tracking-wider font-bold text-primary border border-dashed border-primary/40 px-2 py-1 hover:bg-primary/10 transition-colors"
+            title="Execute this task immediately"
+          >
+            Do it now
+          </button>
+        )}
+      </div>
       {task.description && (
         <p className="text-[11px] text-muted-foreground line-clamp-3 leading-relaxed">
           {task.description}
