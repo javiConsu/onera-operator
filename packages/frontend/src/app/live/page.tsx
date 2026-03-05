@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import {
   publicApi,
@@ -12,6 +13,8 @@ import {
   type TerminalLine,
 } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { CollapsibleColumn } from "@/components/ui/collapsible-column";
 
 // ---------------------------------------------------------------------------
 // Elapsed-time hook (for running tasks)
@@ -82,31 +85,27 @@ export default function LivePage() {
         </div>
       </header>
 
-      {/* ── 4-column dashboard ───────────────────────────────────── */}
-      <div className="flex-1 grid grid-cols-12 overflow-hidden">
-        {/* Col 1 — Operator status + Business stats */}
-        <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5 space-y-6">
+      {/* ── 4-column dashboard — collapsible ────────────────────── */}
+      <div className="flex-1 flex overflow-hidden">
+        <CollapsibleColumn title="Operator" className="p-5 space-y-6">
           <OperatorColumn data={data} />
-        </div>
+        </CollapsibleColumn>
 
-        {/* Col 2 — Tasks */}
-        <div className="col-span-4 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5">
+        <CollapsibleColumn title="Tasks" className="p-5">
           <TasksColumn tasks={data?.tasks ?? []} stats={data?.stats} />
-        </div>
+        </CollapsibleColumn>
 
-        {/* Col 3 — Twitter + Email */}
-        <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-5">
+        <CollapsibleColumn title="Social" className="p-5">
           <SocialColumn
             tweets={data?.tweets ?? []}
             emails={data?.emails ?? []}
             stats={data?.stats}
           />
-        </div>
+        </CollapsibleColumn>
 
-        {/* Col 4 — Ask OneraOS + CTA */}
-        <div className="col-span-3 overflow-y-auto scrollbar-thin p-5 flex flex-col">
+        <CollapsibleColumn title="Ask OneraOS" isLast className="p-5 flex flex-col">
           <AskColumn />
-        </div>
+        </CollapsibleColumn>
       </div>
     </div>
   );
@@ -160,10 +159,7 @@ function OperatorColumn({ data }: { data: PublicLiveData | null }) {
   return (
     <>
       {/* Operator face */}
-      <div>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          OneraOS
-        </h3>
+      <CollapsibleSection title="OneraOS">
         <div className="border border-dashed border-border p-4 flex items-center gap-3">
           <div className="text-primary text-xs leading-none whitespace-pre font-bold shrink-0">
             {`| ^  ^ |
@@ -181,13 +177,10 @@ function OperatorColumn({ data }: { data: PublicLiveData | null }) {
             </p>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Business stats */}
-      <div>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Business
-        </h3>
+      <CollapsibleSection title="Business">
         <div className="space-y-2">
           {[
             ["Tasks Completed", stats?.totalTasksCompleted ?? 0],
@@ -204,14 +197,20 @@ function OperatorColumn({ data }: { data: PublicLiveData | null }) {
             </div>
           ))}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Agent roster */}
       {data && data.agents.length > 0 && (
-        <div>
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Agents
-          </h3>
+        <CollapsibleSection
+          title="Agents"
+          badge={
+            running > 0 ? (
+              <span className="text-[10px] text-primary font-mono animate-pulse">
+                {running} active
+              </span>
+            ) : undefined
+          }
+        >
           <div className="space-y-1.5">
             {data.agents.map((agent) => {
               const isRunning = agent.status === "running";
@@ -249,7 +248,7 @@ function OperatorColumn({ data }: { data: PublicLiveData | null }) {
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
     </>
   );
@@ -281,45 +280,45 @@ function TasksColumn({
   const completedTasks = tasks.filter((t) => t.status !== "IN_PROGRESS");
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Tasks
-        </h3>
-        {runningTasks.length > 0 && (
+    <CollapsibleSection
+      title="Tasks"
+      badge={
+        runningTasks.length > 0 ? (
           <span className="text-[10px] text-primary font-mono animate-pulse">
             {runningTasks.length} running
           </span>
+        ) : undefined
+      }
+    >
+      <div className="space-y-3">
+        {/* Running tasks — highlighted */}
+        {runningTasks.map((task) => (
+          <RunningTaskCard key={task.id} task={task} />
+        ))}
+
+        {/* Recent completed tasks */}
+        {completedTasks.slice(0, 8).map((task) => (
+          <TaskCard key={task.id} task={task} />
+        ))}
+
+        {tasks.length === 0 && (
+          <div className="border border-dashed border-border p-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              No recent activity. Agents are warming up...
+            </p>
+            <span className="text-[10px] text-primary animate-pulse block mt-2">
+              Waiting for tasks
+            </span>
+          </div>
+        )}
+
+        {stats && stats.tasksLast24h > 0 && (
+          <div className="text-[10px] text-muted-foreground pt-1 border-t border-dashed border-border/50">
+            + {stats.tasksLast24h.toLocaleString()} tasks completed in the past 24h
+          </div>
         )}
       </div>
-
-      {/* Running tasks — highlighted */}
-      {runningTasks.map((task) => (
-        <RunningTaskCard key={task.id} task={task} />
-      ))}
-
-      {/* Recent completed tasks */}
-      {completedTasks.slice(0, 8).map((task) => (
-        <TaskCard key={task.id} task={task} />
-      ))}
-
-      {tasks.length === 0 && (
-        <div className="border border-dashed border-border p-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            No recent activity. Agents are warming up...
-          </p>
-          <span className="text-[10px] text-primary animate-pulse block mt-2">
-            Waiting for tasks
-          </span>
-        </div>
-      )}
-
-      {stats && stats.tasksLast24h > 0 && (
-        <div className="text-[10px] text-muted-foreground pt-1 border-t border-dashed border-border/50">
-          + {stats.tasksLast24h.toLocaleString()} tasks completed in the past 24h
-        </div>
-      )}
-    </div>
+    </CollapsibleSection>
   );
 }
 
@@ -391,73 +390,83 @@ function SocialColumn({
   return (
     <div className="space-y-5">
       {/* Twitter */}
-      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-        Twitter
-      </h3>
+      <CollapsibleSection
+        title="Twitter"
+        badge={
+          tweets.length > 0 ? (
+            <span className="text-[10px] text-muted-foreground">{tweets.length} tweets</span>
+          ) : undefined
+        }
+      >
+        {tweets.length > 0 ? (
+          <div className="space-y-2">
+            {tweets.map((tweet, i) => (
+              <div key={i} className="border border-dashed border-border p-3 space-y-2">
+                <p className="text-xs leading-relaxed">{tweet.text}</p>
+                <span className="text-[10px] text-muted-foreground">
+                  {formatRelativeTime(tweet.postedAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border border-dashed border-border p-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              No tweets yet. The AI composes tweets automatically.
+            </p>
+          </div>
+        )}
 
-      {tweets.length > 0 ? (
-        <div className="space-y-2">
-          {tweets.map((tweet, i) => (
-            <div key={i} className="border border-dashed border-border p-3 space-y-2">
-              <p className="text-xs leading-relaxed">{tweet.text}</p>
-              <span className="text-[10px] text-muted-foreground">
-                {formatRelativeTime(tweet.postedAt)}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="border border-dashed border-border p-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            No tweets yet. The AI composes tweets automatically.
-          </p>
-        </div>
-      )}
-
-      {stats && (
-        <div className="text-[10px] text-muted-foreground">
-          + {stats.tweetsPosted.toLocaleString()} tweets posted all-time
-        </div>
-      )}
+        {stats && (
+          <div className="text-[10px] text-muted-foreground">
+            + {stats.tweetsPosted.toLocaleString()} tweets posted all-time
+          </div>
+        )}
+      </CollapsibleSection>
 
       <div className="border-t border-dashed border-border" />
 
       {/* Email */}
-      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-        Email
-      </h3>
-
-      {emails.length > 0 ? (
-        <div className="space-y-0">
-          {emails.map((email, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-2 text-xs py-2.5 border-b border-dashed border-border/50 last:border-0"
-            >
-              <span className="text-primary font-bold shrink-0 mt-0.5">&rarr;</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate">{email.subject}</p>
-                <p className="text-[10px] text-muted-foreground truncate">To: {email.to}</p>
+      <CollapsibleSection
+        title="Email"
+        badge={
+          emails.length > 0 ? (
+            <span className="text-[10px] text-muted-foreground">{emails.length} sent</span>
+          ) : undefined
+        }
+      >
+        {emails.length > 0 ? (
+          <div className="space-y-0">
+            {emails.map((email, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-2 text-xs py-2.5 border-b border-dashed border-border/50 last:border-0"
+              >
+                <span className="text-primary font-bold shrink-0 mt-0.5">&rarr;</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate">{email.subject}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">To: {email.to}</p>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {formatRelativeTime(email.sentAt)}
+                </span>
               </div>
-              <span className="text-[10px] text-muted-foreground shrink-0">
-                {formatRelativeTime(email.sentAt)}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="border border-dashed border-border p-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            No emails sent yet. The AI finds leads and sends outreach.
-          </p>
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="border border-dashed border-border p-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              No emails sent yet. The AI finds leads and sends outreach.
+            </p>
+          </div>
+        )}
 
-      {stats && (
-        <div className="text-[10px] text-muted-foreground">
-          + {stats.emailsSent.toLocaleString()} emails sent all-time
-        </div>
-      )}
+        {stats && (
+          <div className="text-[10px] text-muted-foreground">
+            + {stats.emailsSent.toLocaleString()} emails sent all-time
+          </div>
+        )}
+      </CollapsibleSection>
     </div>
   );
 }
@@ -509,105 +518,138 @@ function AskColumn() {
 
   return (
     <>
-      {/* Header */}
-      <div className="shrink-0 mb-4">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-          Ask OneraOS
-        </h3>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
+      {/* Ask OneraOS chat */}
+      <CollapsibleSection title="Ask OneraOS" className="flex-1 flex flex-col min-h-0">
+        <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
           Ask anything about what the system is doing right now.
         </p>
-      </div>
 
-      {/* Chat messages area */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-3 mb-4">
-        {messages.length === 0 && (
-          <div className="space-y-2">
-            {suggestions.map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  setInput(s);
-                  // auto-submit
-                  setMessages((prev) => [...prev, { role: "user", text: s }]);
-                  setLoading(true);
-                  setError(null);
-                  publicApi
-                    .ask(s)
-                    .then((res) =>
-                      setMessages((prev) => [...prev, { role: "assistant", text: res.answer }])
-                    )
-                    .catch((err) =>
-                      setError(err instanceof Error ? err.message : "Something went wrong")
-                    )
-                    .finally(() => {
-                      setLoading(false);
-                      setInput("");
-                    });
-                }}
-                className="block w-full text-left text-[11px] text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary/40 p-2.5 transition-colors"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Chat messages area */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-3 mb-4">
+          {messages.length === 0 && (
+            <div className="space-y-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setInput(s);
+                    // auto-submit
+                    setMessages((prev) => [...prev, { role: "user", text: s }]);
+                    setLoading(true);
+                    setError(null);
+                    publicApi
+                      .ask(s)
+                      .then((res) =>
+                        setMessages((prev) => [...prev, { role: "assistant", text: res.answer }])
+                      )
+                      .catch((err) =>
+                        setError(err instanceof Error ? err.message : "Something went wrong")
+                      )
+                      .finally(() => {
+                        setLoading(false);
+                        setInput("");
+                      });
+                  }}
+                  className="block w-full text-left text-[11px] text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary/40 p-2.5 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`text-xs leading-relaxed ${
-              msg.role === "user"
-                ? "text-muted-foreground"
-                : "text-foreground border-l-2 border-primary pl-3"
-            }`}
-          >
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
-              {msg.role === "user" ? "You" : "OneraOS"}
-            </span>
-            {msg.text}
-          </div>
-        ))}
+          {messages.map((msg, i) => (
+            <div key={i}>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
+                {msg.role === "user" ? "You" : "OneraOS"}
+              </span>
+              {msg.role === "user" ? (
+                <div className="text-xs leading-relaxed text-muted-foreground">
+                  {msg.text}
+                </div>
+              ) : (
+                <div className="text-foreground border-l-2 border-primary pl-3 text-xs leading-relaxed prose-sm">
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => (
+                        <p className="text-xs leading-relaxed mb-1.5 last:mb-0">
+                          {children}
+                        </p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-bold text-primary">
+                          {children}
+                        </strong>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="list-disc pl-4 space-y-0.5 mb-1.5">
+                          {children}
+                        </ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal pl-4 space-y-0.5 mb-1.5">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-xs leading-relaxed">
+                          {children}
+                        </li>
+                      ),
+                      code: ({ children }) => (
+                        <code className="bg-muted px-1 py-0.5 text-[10px] font-mono">
+                          {children}
+                        </code>
+                      ),
+                    }}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+          ))}
 
-        {loading && (
-          <div className="text-xs text-primary animate-pulse">
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
-              OneraOS
-            </span>
-            Thinking...
-          </div>
-        )}
+          {loading && (
+            <div className="text-xs text-primary animate-pulse">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
+                OneraOS
+              </span>
+              Thinking...
+            </div>
+          )}
 
-        {error && (
-          <div className="text-xs text-destructive">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="text-xs text-destructive">
+              {error}
+            </div>
+          )}
 
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="shrink-0 mb-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAsk()}
-            placeholder="Ask anything..."
-            disabled={loading}
-            className="flex-1 bg-transparent border border-dashed border-border px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 disabled:opacity-50"
-          />
-          <button
-            onClick={handleAsk}
-            disabled={loading || !input.trim()}
-            className="shrink-0 border border-dashed border-border px-3 py-2 text-xs text-primary hover:bg-primary/5 disabled:opacity-30 transition-colors"
-          >
-            Ask
-          </button>
+          <div ref={chatEndRef} />
         </div>
-      </div>
+
+        {/* Input */}
+        <div className="shrink-0 mb-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAsk()}
+              placeholder="Ask anything..."
+              disabled={loading}
+              className="flex-1 bg-transparent border border-dashed border-border px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 disabled:opacity-50"
+            />
+            <button
+              onClick={handleAsk}
+              disabled={loading || !input.trim()}
+              className="shrink-0 border border-dashed border-border px-3 py-2 text-xs text-primary hover:bg-primary/5 disabled:opacity-30 transition-colors"
+            >
+              Ask
+            </button>
+          </div>
+        </div>
+      </CollapsibleSection>
 
       {/* CTA */}
       <div className="shrink-0 border border-dashed border-border p-4">

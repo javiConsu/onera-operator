@@ -10,6 +10,7 @@ import { TwitterPanel } from "@/components/dashboard/twitter-panel";
 import { EngineerPanel } from "@/components/dashboard/engineer-panel";
 import { ReportPanel } from "@/components/dashboard/report-panel";
 import { AskPanel } from "@/components/dashboard/ask-panel";
+import { CollapsibleColumn } from "@/components/ui/collapsible-column";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
@@ -117,52 +118,45 @@ export default function DashboardPage() {
           </div>
       )}
 
-      {/* 5-column dashboard grid */}
-      <div className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-12 h-full">
-          {/* Column 1: Company status */}
-          <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
-            <CompanyPanel
-              projectName={selectedProject?.name || ""}
-              projectId={selectedProject?.id}
-              credits={credits}
-              projectWebsite={selectedProject?.website}
-              projectDescription={selectedProject?.description}
-            />
-          </div>
+      {/* 5-column dashboard — collapsible */}
+      <div className="flex-1 flex overflow-hidden">
+        <CollapsibleColumn title="Company" className="p-4">
+          <CompanyPanel
+            projectName={selectedProject?.name || ""}
+            projectId={selectedProject?.id}
+            credits={credits}
+            projectWebsite={selectedProject?.website}
+            projectDescription={selectedProject?.description}
+          />
+        </CollapsibleColumn>
 
-          {/* Column 2: Tasks */}
-          <div className="col-span-3 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
-            {selectedProject && (
-              <TasksPanel key={selectedProject.id} projectId={selectedProject.id} />
-            )}
-          </div>
+        <CollapsibleColumn title="Tasks" className="p-4">
+          {selectedProject && (
+            <TasksPanel key={selectedProject.id} projectId={selectedProject.id} />
+          )}
+        </CollapsibleColumn>
 
-          {/* Column 3: Twitter + Email */}
-          <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
-            {selectedProject && (
-              <TwitterPanel key={selectedProject.id} projectId={selectedProject.id} />
-            )}
-          </div>
+        <CollapsibleColumn title="Social" className="p-4">
+          {selectedProject && (
+            <TwitterPanel key={selectedProject.id} projectId={selectedProject.id} />
+          )}
+        </CollapsibleColumn>
 
-          {/* Column 4: Engineering */}
-          <div className="col-span-2 border-r border-dashed border-border overflow-y-auto scrollbar-thin p-4">
-            {selectedProject && (
-              <EngineerPanel key={selectedProject.id} projectId={selectedProject.id} />
-            )}
-          </div>
+        <CollapsibleColumn title="Engineering" className="p-4">
+          {selectedProject && (
+            <EngineerPanel key={selectedProject.id} projectId={selectedProject.id} />
+          )}
+        </CollapsibleColumn>
 
-          {/* Column 5: Ask + Daily Report */}
-          <div className="col-span-3 overflow-y-auto scrollbar-thin p-4 space-y-4">
-            <div className="border border-dashed border-border p-3" style={{ minHeight: 340 }}>
-              <AskPanel projectId={selectedProject?.id} />
-            </div>
-            {selectedProject && (
-              <ReportPanel key={selectedProject.id} projectId={selectedProject.id} />
-            )}
-          </div>
-        </div>
+        <CollapsibleColumn title="Reports" isLast className="p-4">
+          {selectedProject && (
+            <ReportPanel key={selectedProject.id} projectId={selectedProject.id} />
+          )}
+        </CollapsibleColumn>
       </div>
+
+      {/* Floating Ask OneraOS chat widget */}
+      <AskPanel projectId={selectedProject?.id} />
     </div>
   );
 }

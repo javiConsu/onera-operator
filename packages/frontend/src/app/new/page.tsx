@@ -20,7 +20,7 @@ export default function NewCompanyPage() {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background">
         <span className="text-xs text-muted-foreground uppercase tracking-wider animate-pulse">
           Loading...
         </span>
@@ -57,8 +57,8 @@ export default function NewCompanyPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 bp-texture">
-      <div className="w-full max-w-lg relative z-10">
+    <div className="flex h-screen overflow-hidden bg-background px-4 bp-texture">
+      <div className="relative z-10 mx-auto my-auto w-full max-w-lg overflow-y-auto py-8 scrollbar-thin">
         {/* Back link */}
         <Link
           href="/dashboard"
@@ -75,7 +75,7 @@ export default function NewCompanyPage() {
         {/* Form card */}
         <div className="border-[1.5px] border-dashed border-border p-8 relative bp-corners">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-primary">
+            <h1 className="font-serif text-3xl font-extrabold tracking-tight text-primary">
               Create a Company
             </h1>
             <p className="text-xs text-muted-foreground mt-2">

@@ -56,7 +56,12 @@ export async function chatRoutes(app: FastifyInstance) {
         role: m.role as "user" | "assistant" | "system",
         content: m.content,
       })),
-      projectContext
+      projectContext,
+      {
+        projectId: resolvedProjectId,
+        userId,
+        apiBaseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001",
+      }
     );
 
     // Set headers for SSE streaming

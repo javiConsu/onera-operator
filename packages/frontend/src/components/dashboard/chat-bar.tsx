@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface ChatBarProps {
@@ -47,12 +48,14 @@ export function ChatBar({ projectId }: ChatBarProps) {
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               Chat
             </span>
-            <button
+            <Button
               onClick={clearChat}
-              className="text-[10px] text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-1 text-[10px] text-muted-foreground hover:bg-transparent hover:text-primary"
             >
               [close]
-            </button>
+            </Button>
           </div>
           <div className="p-4 space-y-3">
             {messages.map((message) => (
@@ -108,14 +111,14 @@ export function ChatBar({ projectId }: ChatBarProps) {
           hasMessages && "mx-4 border border-dashed border-border border-t-0"
         )}
       >
-        <span className="text-xs text-muted-foreground shrink-0">&gt;</span>
-        <input
+        <span className="text-xs text-muted-foreground shrink-0 font-mono">&gt;</span>
+        <Input
           ref={inputRef}
           type="text"
           value={input}
           onChange={handleInputChange}
           placeholder="Ask Onera anything..."
-          className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+          className="h-8 flex-1 border-0 border-b-2 border-border bg-transparent px-1 text-xs focus-visible:border-primary"
         />
 
         <Button

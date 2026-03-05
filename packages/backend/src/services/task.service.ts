@@ -81,6 +81,29 @@ export async function updateTaskStatus(
   return prisma.task.update({ where: { id }, data });
 }
 
+export async function updateTask(
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    category?: TaskCategory;
+    priority?: TaskPriority;
+    status?: TaskStatus;
+    automatable?: boolean;
+    agentName?: string | null;
+  }
+) {
+  const update: Record<string, unknown> = { ...data };
+  if (data.status === TaskStatus.COMPLETED) {
+    update.completedAt = new Date();
+  }
+  return prisma.task.update({ where: { id }, data: update });
+}
+
+export async function deleteTask(id: string) {
+  return prisma.task.delete({ where: { id } });
+}
+
 export async function getTaskCredits(taskId: string): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },

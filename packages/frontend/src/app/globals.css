@@ -4,34 +4,35 @@
 
 @layer base {
   :root {
-    /* Blueprint theme — white bg, royal blue accent */
-    --background: 0 0% 100%;
-    --foreground: 228 80% 15%;
+    /* Blueprint paper + royal blue ink with stronger readability */
+    --background: 230 100% 99%;
+    --foreground: 224 45% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 228 80% 15%;
+    --card-foreground: 224 45% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 228 80% 15%;
-    --primary: 228 72% 40%;
+    --popover-foreground: 224 45% 14%;
+    --primary: 226 100% 40%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 225 60% 96%;
-    --secondary-foreground: 228 72% 40%;
-    --muted: 225 40% 95%;
-    --muted-foreground: 228 20% 50%;
-    --accent: 225 60% 96%;
-    --accent-foreground: 228 72% 40%;
+    --secondary: 226 45% 95%;
+    --secondary-foreground: 224 40% 22%;
+    --muted: 226 40% 96%;
+    --muted-foreground: 224 18% 36%;
+    --accent: 226 55% 95%;
+    --accent-foreground: 226 80% 34%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 228 60% 72%;
-    --input: 228 60% 72%;
-    --ring: 228 72% 40%;
+    --border: 226 40% 76%;
+    --input: 226 40% 76%;
+    --ring: 226 100% 40%;
     --radius: 2px;
+    --blueprint-grid: #e5ecff;
 
     /* Blueprint extras */
-    --terminal-bg: 220 20% 8%;
-    --terminal-fg: 142 70% 65%;
-    --terminal-muted: 220 10% 50%;
-    --blueprint-blue: 228 72% 40%;
-    --blueprint-light: 225 60% 96%;
+    --terminal-bg: 224 17% 8%;
+    --terminal-fg: 196 100% 76%;
+    --terminal-muted: 224 12% 58%;
+    --blueprint-blue: 226 100% 40%;
+    --blueprint-light: 230 100% 99%;
   }
 }
 
@@ -39,10 +40,18 @@
   * {
     @apply border-border;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
-    font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code",
-      "Consolas", "Liberation Mono", "Menlo", monospace;
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), Inter, sans-serif;
+    background-image:
+      linear-gradient(var(--blueprint-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--blueprint-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 
@@ -66,10 +75,12 @@
 .bp-card {
   border: 1.5px dashed hsl(var(--border));
   background: hsl(var(--card));
+  box-shadow: none;
 }
 .bp-card-solid {
   border: 1.5px solid hsl(var(--border));
   background: hsl(var(--card));
+  box-shadow: none;
 }
 .bp-card-accent {
   border: 2px solid hsl(var(--primary));
@@ -81,9 +92,10 @@
 .terminal-bar {
   background: hsl(var(--terminal-bg));
   color: hsl(var(--terminal-fg));
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 12px;
-  line-height: 1.5;
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  border-bottom: 2px solid hsl(var(--primary));
 }
 .terminal-bar .terminal-line::before {
   content: "> ";
@@ -91,13 +103,14 @@
 }
 
 /* Blueprint grid background for hero sections */
-.bp-grid-bg {
+.bg-blueprint {
+  background-color: hsl(var(--background));
   background-image: radial-gradient(
     circle,
-    hsl(var(--border) / 0.3) 1px,
+    var(--blueprint-grid) 1px,
     transparent 1px
   );
-  background-size: 20px 20px;
+  background-size: 24px 24px;
 }
 
 /* Corner decorations for blueprint cards */
@@ -141,14 +154,10 @@
   animation: blink 1s infinite;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
 /* Blueprint heading style */
 .bp-heading {
-  font-weight: 700;
+  font-family: var(--font-sans), Inter, sans-serif;
+  font-weight: 800;
   letter-spacing: -0.02em;
   color: hsl(var(--primary));
 }

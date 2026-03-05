@@ -104,7 +104,7 @@ export default function ProjectSettingsPage() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background">
         <span className="text-xs text-muted-foreground uppercase tracking-wider animate-pulse">
           Loading...
         </span>
@@ -114,7 +114,7 @@ export default function ProjectSettingsPage() {
 
   if (error && !project) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-xs text-destructive mb-4">{error}</p>
           <Link href="/dashboard">
@@ -126,15 +126,15 @@ export default function ProjectSettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background bp-texture">
+    <div className="flex h-screen flex-col overflow-hidden bg-background bp-texture">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-dashed border-border px-8 py-4">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight text-primary">
+      <header className="flex shrink-0 items-center justify-between border-b-2 border-dashed border-border bg-background/90 px-8 py-4 backdrop-blur-sm">
+        <Link href="/dashboard" className="font-serif text-3xl font-extrabold tracking-tight text-primary">
           OneraOS
         </Link>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto px-4 py-8 scrollbar-thin">
         <div className="w-full max-w-2xl">
           <Link
             href="/dashboard"
@@ -148,7 +148,7 @@ export default function ProjectSettingsPage() {
           </div>
 
           <div className="border-[1.5px] border-dashed border-border p-8 relative bp-corners">
-            <h1 className="text-2xl font-bold tracking-tight text-primary mb-6">
+            <h1 className="mb-6 font-serif text-3xl font-extrabold tracking-tight text-primary">
               {project?.name}
             </h1>
 
@@ -188,7 +188,7 @@ export default function ProjectSettingsPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   placeholder="What does your company do?"
-                  className="flex w-full border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono resize-none"
+                  className="flex w-full rounded-none border-2 border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 />
               </div>
 
@@ -202,7 +202,7 @@ export default function ProjectSettingsPage() {
                   onChange={(e) => setProduct(e.target.value)}
                   rows={2}
                   placeholder="Core product or service description"
-                  className="flex w-full border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono resize-none"
+                  className="flex w-full rounded-none border-2 border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 />
               </div>
 
@@ -216,7 +216,7 @@ export default function ProjectSettingsPage() {
                   onChange={(e) => setTargetUsers(e.target.value)}
                   rows={2}
                   placeholder="Who are your customers?"
-                  className="flex w-full border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono resize-none"
+                  className="flex w-full rounded-none border-2 border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 />
               </div>
 
@@ -231,7 +231,7 @@ export default function ProjectSettingsPage() {
                     onChange={(e) => setCompetitors(e.target.value)}
                     rows={4}
                     placeholder="Competitor A&#10;Competitor B&#10;Competitor C"
-                    className="flex w-full border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono resize-none"
+                    className="flex w-full rounded-none border-2 border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -244,7 +244,7 @@ export default function ProjectSettingsPage() {
                     onChange={(e) => setGoals(e.target.value)}
                     rows={4}
                     placeholder="Reach 100 customers&#10;Launch paid tier&#10;Get press coverage"
-                    className="flex w-full border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono resize-none"
+                    className="flex w-full rounded-none border-2 border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                   />
                 </div>
               </div>

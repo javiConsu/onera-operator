@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, type TaskMetrics, type AgentStatus, type Project } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 interface CompanyPanelProps {
   projectName: string;
@@ -28,7 +29,6 @@ export function CompanyPanel({
   const [project, setProject] = useState<Project | null>(null);
   const [triggering, setTriggering] = useState(false);
   const [triggeringAgent, setTriggeringAgent] = useState<string | null>(null);
-  const [showIntelligence, setShowIntelligence] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!projectId) return;
@@ -115,7 +115,7 @@ export function CompanyPanel({
       {/* Company name and details */}
       <div>
         <div className="flex items-start justify-between gap-1">
-          <h2 className="text-lg font-bold text-primary tracking-tight">
+          <h2 className="font-serif text-2xl font-extrabold text-primary tracking-tight">
             {projectName}
           </h2>
           {projectId && (
@@ -171,56 +171,66 @@ export function CompanyPanel({
 
       {/* All agents roster */}
       {agents.length > 0 && (
-        <div className="border border-dashed border-border p-3 space-y-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Agents
-          </p>
-          {agents.map((agent) => {
-            const isRunning = agent.status === "running";
-            const isError = agent.status === "error";
-            const canTrigger = executableAgents.has(agent.name) && !isRunning;
-            const isTriggeringThis = triggeringAgent === agent.name;
-            return (
-              <div key={agent.id} className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span
-                    className={`text-[10px] shrink-0 ${
-                      isRunning
-                        ? "text-primary animate-pulse"
-                        : isError
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {isRunning ? "●" : isError ? "✕" : "○"}
-                  </span>
-                  <span
-                    className={`text-[10px] truncate ${
-                      isRunning ? "text-foreground font-semibold" : "text-muted-foreground"
-                    }`}
-                  >
-                    {agent.displayName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {canTrigger && (
-                    <button
-                      onClick={() => handleTriggerAgent(agent.name)}
-                      disabled={isTriggeringThis || !projectId}
-                      className="text-[8px] uppercase tracking-wider font-bold text-primary border border-dashed border-primary/30 px-1.5 py-0.5 hover:bg-primary/10 disabled:opacity-40 transition-colors"
-                      title={`Run all pending ${agent.displayName} tasks`}
+        <CollapsibleSection
+          title="Agents"
+          badge={
+            runningAgents.length > 0 ? (
+              <span className="text-[10px] text-primary font-mono animate-pulse">
+                {runningAgents.length} active
+              </span>
+            ) : undefined
+          }
+        >
+          <div className="border border-dashed border-border p-3 space-y-2">
+            {agents.map((agent) => {
+              const isRunning = agent.status === "running";
+              const isError = agent.status === "error";
+              const canTrigger = executableAgents.has(agent.name) && !isRunning;
+              const isTriggeringThis = triggeringAgent === agent.name;
+              return (
+                <div key={agent.id} className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className={`text-[10px] shrink-0 ${
+                        isRunning
+                          ? "text-primary animate-pulse"
+                          : isError
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                      }`}
                     >
-                      {isTriggeringThis ? "..." : "Run"}
-                    </button>
-                  )}
-                  <span className="text-[9px] text-muted-foreground/60">
-                    {agent.tasksCompleted > 0 ? `${agent.tasksCompleted}✓` : agent.lastRunAt ? formatRelativeTime(agent.lastRunAt) : "—"}
-                  </span>
+                      {isRunning ? "●" : isError ? "✕" : "○"}
+                    </span>
+                    <span
+                      className={`text-[10px] truncate ${
+                        isRunning ? "text-foreground font-semibold" : "text-muted-foreground"
+                      }`}
+                    >
+                      {agent.displayName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {canTrigger && (
+                      <Button
+                        onClick={() => handleTriggerAgent(agent.name)}
+                        disabled={isTriggeringThis || !projectId}
+                        variant="outline"
+                        size="sm"
+                        className="h-5 border-dashed px-1.5 py-0 text-[8px]"
+                        title={`Run all pending ${agent.displayName} tasks`}
+                      >
+                        {isTriggeringThis ? "..." : "Run"}
+                      </Button>
+                    )}
+                    <span className="text-[9px] text-muted-foreground/60">
+                      {agent.tasksCompleted > 0 ? `${agent.tasksCompleted}✓` : agent.lastRunAt ? formatRelativeTime(agent.lastRunAt) : "—"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Credits */}
@@ -249,61 +259,49 @@ export function CompanyPanel({
 
       {/* Project intelligence */}
       {(project?.product || project?.targetUsers || competitors.length > 0 || goals.length > 0) && (
-        <div>
-          <button
-            className="flex items-center justify-between w-full text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 hover:text-primary transition-colors"
-            onClick={() => setShowIntelligence((v) => !v)}
-          >
-            <span>Intelligence</span>
-            <span className="opacity-50">{showIntelligence ? "▲" : "▼"}</span>
-          </button>
-          {showIntelligence && (
-            <div className="space-y-2">
-              {project?.product && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Product</p>
-                  <p className="text-[10px] leading-relaxed line-clamp-3">{project.product}</p>
+        <CollapsibleSection title="Intelligence" defaultOpen={false}>
+          <div className="space-y-2">
+            {project?.product && (
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Product</p>
+                <p className="text-[10px] leading-relaxed line-clamp-3">{project.product}</p>
+              </div>
+            )}
+            {project?.targetUsers && (
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Target Users</p>
+                <p className="text-[10px] leading-relaxed line-clamp-2">{project.targetUsers}</p>
+              </div>
+            )}
+            {competitors.length > 0 && (
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Competitors</p>
+                <div className="flex flex-wrap gap-1">
+                  {competitors.map((c: string, i: number) => (
+                    <span key={i} className="text-[9px] border border-dashed border-border px-1.5 py-0.5 text-muted-foreground">
+                      {c}
+                    </span>
+                  ))}
                 </div>
-              )}
-              {project?.targetUsers && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Target Users</p>
-                  <p className="text-[10px] leading-relaxed line-clamp-2">{project.targetUsers}</p>
+              </div>
+            )}
+            {goals.length > 0 && (
+              <div>
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Goals</p>
+                <div className="space-y-0.5">
+                  {goals.map((g: string, i: number) => (
+                    <p key={i} className="text-[10px] leading-relaxed">• {g}</p>
+                  ))}
                 </div>
-              )}
-              {competitors.length > 0 && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Competitors</p>
-                  <div className="flex flex-wrap gap-1">
-                    {competitors.map((c: string, i: number) => (
-                      <span key={i} className="text-[9px] border border-dashed border-border px-1.5 py-0.5 text-muted-foreground">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {goals.length > 0 && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">Goals</p>
-                  <div className="space-y-0.5">
-                    {goals.map((g: string, i: number) => (
-                      <p key={i} className="text-[10px] leading-relaxed">• {g}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* Task metrics */}
       {metrics && (
-        <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3">
-            Operations
-          </h4>
+        <CollapsibleSection title="Operations">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Completed</span>
@@ -330,7 +328,7 @@ export function CompanyPanel({
               </div>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Last updated */}

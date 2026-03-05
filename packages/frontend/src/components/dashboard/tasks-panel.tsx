@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api, Task } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 function useElapsedTime(startIso: string | null, isRunning: boolean): string {
   const [elapsed, setElapsed] = useState("");
@@ -103,24 +105,22 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
   const runningCount = tasks.filter((t) => t.status === "IN_PROGRESS").length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Tasks
-        </h3>
-        <div className="flex items-center gap-2">
-          {runningCount > 0 && (
-            <span className="text-[10px] text-yellow-600 font-mono animate-pulse">
-              {runningCount} running
-            </span>
-          )}
-          <span className="text-[10px] text-muted-foreground">
-            {tasks.length} total
+    <CollapsibleSection
+      title="Tasks"
+      badge={
+        runningCount > 0 ? (
+          <span className="text-[10px] text-yellow-600 font-mono animate-pulse">
+            {runningCount} running
           </span>
-        </div>
-      </div>
-
-      <div className="space-y-3 overflow-y-auto max-h-[700px] pr-1 scrollbar-thin">
+        ) : undefined
+      }
+      trailing={
+        <span className="text-[10px] text-muted-foreground">
+          {tasks.length} total
+        </span>
+      }
+    >
+      <div className="space-y-3 overflow-y-auto pr-1 scrollbar-thin">
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
@@ -150,7 +150,7 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
           + {completedToday} task{completedToday !== 1 ? "s" : ""} completed in the past 24h
         </div>
       )}
-    </div>
+    </CollapsibleSection>
   );
 }
 
@@ -211,16 +211,18 @@ function TaskCard({
           {task.title}
         </h4>
         {canExecute && (
-          <button
+          <Button
             onClick={(e) => {
               e.stopPropagation();
               onExecute?.(task.id);
             }}
-            className="shrink-0 text-[9px] uppercase tracking-wider font-bold text-primary border border-dashed border-primary/40 px-2 py-1 hover:bg-primary/10 transition-colors"
+            variant="outline"
+            size="sm"
+            className="h-6 shrink-0 border-dashed px-2 py-1 text-[9px]"
             title="Execute this task immediately"
           >
             Do it now
-          </button>
+          </Button>
         )}
       </div>
       {task.description && (

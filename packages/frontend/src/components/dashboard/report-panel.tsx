@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, DailyReport } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 interface ReportPanelProps {
   projectId: string;
@@ -51,11 +52,15 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-        Daily Report
-      </h3>
-      <div className="overflow-y-auto max-h-[700px] pr-1 space-y-0 scrollbar-thin">
+    <CollapsibleSection
+      title="Daily Report"
+      badge={
+        reports.length > 0 ? (
+          <span className="text-[10px] text-muted-foreground">{reports.length} reports</span>
+        ) : undefined
+      }
+    >
+      <div className="overflow-y-auto pr-1 space-y-0 scrollbar-thin">
         {reports.length === 0 && (
           <div className="border border-dashed border-border p-6 text-center">
             <p className="text-xs text-muted-foreground">
@@ -68,7 +73,7 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
           <ReportEntry key={report.id || index} report={report} />
         ))}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }
 

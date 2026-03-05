@@ -23,13 +23,13 @@ export default function LandingPage() {
   }, [fetchLive]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background bp-texture">
+    <div className="flex h-screen flex-col overflow-hidden bg-background bp-texture">
       {/* Live terminal bar — always visible at the very top */}
       <LiveTerminalBar liveData={liveData} />
 
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-dashed border-border px-8 py-4 relative z-10">
-        <span className="text-lg font-bold tracking-tight text-primary">
+      <header className="flex shrink-0 items-center justify-between border-b-2 border-dashed border-border bg-background/90 px-8 py-4 relative z-10 backdrop-blur-sm">
+        <span className="font-serif text-3xl font-extrabold tracking-tight text-primary">
           OneraOS
         </span>
         <div className="flex items-center gap-4">
@@ -56,7 +56,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 relative z-10">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-16 scrollbar-thin">
         <div className="mx-auto max-w-3xl">
           {/* Blueprint tag */}
           <div className="inline-flex items-center gap-2 border-2 border-primary bg-primary text-primary-foreground px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold mb-8">
@@ -64,7 +64,7 @@ export default function LandingPage() {
             Open Source AI Operator
           </div>
 
-          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-primary sm:text-6xl">
+          <h1 className="font-serif text-5xl font-extrabold leading-[1.08] tracking-tight text-primary sm:text-6xl">
             AI That Runs Your
             <br />
             Company While
@@ -157,7 +157,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-dashed border-border py-6 px-8 relative z-10">
+      <footer className="relative z-10 shrink-0 border-t-2 border-dashed border-border py-4 px-8">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
           <span>Onera Operator &middot; Open Source</span>
           <div className="flex items-center gap-6">

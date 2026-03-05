@@ -34,16 +34,16 @@ export default function DashboardLayout({
   if (!isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen overflow-hidden bg-background bg-blueprint flex flex-col">
       {/* Terminal bar at the very top — like the live page */}
       <TerminalBar />
 
       {/* Navigation header */}
-      <header className="border-b border-dashed border-border bg-background">
+      <header className="border-b-2 border-dashed border-border bg-background/90 backdrop-blur-sm">
         <div className="flex h-12 items-center justify-between px-6">
           <Link
             href="/dashboard"
-            className="text-xl font-bold tracking-tight text-primary"
+            className="font-serif text-2xl font-extrabold tracking-tight text-primary"
           >
             OneraOS
           </Link>
@@ -60,7 +60,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
     </div>
   );
 }

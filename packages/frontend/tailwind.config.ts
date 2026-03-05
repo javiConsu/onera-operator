@@ -12,14 +12,11 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
+        sans: ["var(--font-sans)", "sans-serif"],
+        serif: ["var(--font-sans)", "sans-serif"],
         mono: [
+          "var(--font-mono)",
           "JetBrains Mono",
-          "Fira Code",
-          "SF Mono",
-          "Cascadia Code",
-          "Consolas",
-          "Liberation Mono",
-          "Menlo",
           "monospace",
         ],
       },
@@ -62,11 +59,26 @@ const config: Config = {
           fg: "hsl(var(--terminal-fg))",
           muted: "hsl(var(--terminal-muted))",
         },
+        "blueprint-grid": "var(--blueprint-grid)",
+      },
+      borderWidth: {
+        "1.5": "1.5px",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 1px)",
         sm: "var(--radius)",
+      },
+      backgroundImage: {
+        "blueprint-dot":
+          "radial-gradient(circle, var(--blueprint-grid) 1px, transparent 1px)",
+        "blueprint-line":
+          "linear-gradient(var(--blueprint-grid) 1px, transparent 1px), linear-gradient(90deg, var(--blueprint-grid) 1px, transparent 1px)",
+      },
+      backgroundSize: {
+        "grid-sm": "16px 16px",
+        "grid-md": "24px 24px",
+        "grid-lg": "32px 32px",
       },
       keyframes: {
         "accordion-down": {

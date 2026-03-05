@@ -12,6 +12,7 @@ import {
   summarizeContent,
   researchCompanyUrl,
   executeCode,
+  createTaskManagerTools,
 } from "@onera/tools";
 
 /**
@@ -22,9 +23,15 @@ import {
  */
 export function streamChatAgent(
   messages: Message[],
-  projectContext: string
+  projectContext: string,
+  context?: { projectId?: string; userId?: string; apiBaseUrl?: string }
 ) {
   const model = getModel();
+  const taskTools = createTaskManagerTools({
+    projectId: context?.projectId,
+    userId: context?.userId,
+    apiBaseUrl: context?.apiBaseUrl,
+  });
 
   return streamText({
     model,
@@ -49,6 +56,7 @@ export function streamChatAgent(
       summarizeContent,
       researchCompanyUrl,
       executeCode,
+      ...taskTools,
     },
     maxSteps: 10,
   });

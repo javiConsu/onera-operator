@@ -3,12 +3,18 @@ import {
   listTasks,
   getTask,
   createTask,
+  updateTask,
+  deleteTask,
   updateTaskStatus,
   getTaskMetrics,
 } from "../services/task.service.js";
 import { getExecutionLogs } from "../services/execution.service.js";
 import { enqueueTaskExecution } from "../queue/task.queue.js";
-import type { TaskCategory, TaskPriority } from "@onera/database";
+import {
+  TaskStatus,
+  type TaskCategory,
+  type TaskPriority,
+} from "@onera/database";
 
 export async function taskRoutes(app: FastifyInstance) {
   // List tasks with optional filters
@@ -117,6 +123,64 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   });
 
+  // Update task fields
+  app.put<{
+    Params: { id: string };
+    Body: {
+      title?: string;
+      description?: string;
+      category?: TaskCategory;
+      priority?: TaskPriority;
+      status?: string;
+      automatable?: boolean;
+      agentName?: string | null;
+    };
+  }>("/api/tasks/:id", async (request, reply) => {
+    const { title, description, category, priority, status, automatable, agentName } =
+      request.body;
+
+    if (
+      title === undefined &&
+      description === undefined &&
+      category === undefined &&
+      priority === undefined &&
+      status === undefined &&
+      automatable === undefined &&
+      agentName === undefined
+    ) {
+      return reply.code(400).send({ error: "No fields provided to update" });
+    }
+
+    if (status && !Object.values(TaskStatus).includes(status as TaskStatus)) {
+      return reply.code(400).send({ error: "Invalid status value" });
+    }
+
+    try {
+      const task = await updateTask(request.params.id, {
+        title,
+        description,
+        category,
+        priority,
+        status: status as TaskStatus | undefined,
+        automatable,
+        agentName,
+      });
+      return reply.send(task);
+    } catch {
+      return reply.code(404).send({ error: "Task not found" });
+    }
+  });
+
+  // Delete a task
+  app.delete<{ Params: { id: string } }>("/api/tasks/:id", async (request, reply) => {
+    try {
+      await deleteTask(request.params.id);
+      return reply.code(204).send();
+    } catch {
+      return reply.code(404).send({ error: "Task not found" });
+    }
+  });
+
   // Get execution logs for a task
   app.get<{ Params: { id: string } }>(
     "/api/tasks/:id/logs",
@@ -164,5 +228,4 @@ export async function taskRoutes(app: FastifyInstance) {
       });
     }
   );
-
 }

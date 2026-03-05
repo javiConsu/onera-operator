@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { api, Task } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 interface EngineerPanelProps {
   projectId: string;
@@ -184,24 +185,22 @@ export function EngineerPanel({ projectId }: EngineerPanelProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Engineering
-        </h3>
-        <div className="flex items-center gap-2">
-          {runningCount > 0 && (
-            <span className="text-[10px] text-yellow-600 animate-pulse font-mono">
-              {runningCount} running
-            </span>
-          )}
-          <span className="text-[10px] text-muted-foreground">
-            {completedCount}/{tasks.length} done
+    <CollapsibleSection
+      title="Engineering"
+      badge={
+        runningCount > 0 ? (
+          <span className="text-[10px] text-yellow-600 animate-pulse font-mono">
+            {runningCount} running
           </span>
-        </div>
-      </div>
-
-      <div className="space-y-2 overflow-y-auto max-h-[700px] pr-1 scrollbar-thin">
+        ) : undefined
+      }
+      trailing={
+        <span className="text-[10px] text-muted-foreground">
+          {completedCount}/{tasks.length} done
+        </span>
+      }
+    >
+      <div className="space-y-2 overflow-y-auto pr-1 scrollbar-thin">
         {tasks.length === 0 ? (
           <div className="border border-dashed border-border p-6 text-center">
             <p className="text-xs text-muted-foreground">
@@ -218,6 +217,6 @@ export function EngineerPanel({ projectId }: EngineerPanelProps) {
           ))
         )}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }
