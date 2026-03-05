@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   publicApi,
   type PublicLiveData,
-  type PublicAgentStatus,
   type PublicTask,
   type PublicTweet,
   type PublicEmail,
@@ -61,15 +60,15 @@ export default function LivePage() {
   }, [fetchData]);
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-background bg-blueprint">
       {/* ── Scrolling terminal bar ───────────────────────────────── */}
       <TerminalBar lines={data?.terminalLines ?? []} />
 
       {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="border-b border-dashed border-border bg-background shrink-0">
+      <header className="shrink-0 border-b-2 border-dashed border-border bg-background/90 backdrop-blur-sm">
         <div className="flex h-12 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <Link href="/home" className="text-xl font-bold tracking-tight text-primary">
+            <Link href="/home" className="font-serif text-2xl font-extrabold tracking-tight text-primary">
               OneraOS
             </Link>
             <span className="inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold">
@@ -106,7 +105,7 @@ export default function LivePage() {
 
         {/* Col 4 — Ask OneraOS + CTA */}
         <div className="col-span-3 overflow-y-auto scrollbar-thin p-5 flex flex-col">
-          <AskColumn agents={data?.agents ?? []} />
+          <AskColumn />
         </div>
       </div>
     </div>
@@ -471,8 +470,7 @@ interface ChatMessage {
   text: string;
 }
 
-function AskColumn({ agents }: { agents: PublicAgentStatus[] }) {
-  const totalTasks = agents.reduce((sum, a) => sum + a.tasksCompleted, 0);
+function AskColumn() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -590,7 +588,7 @@ function AskColumn({ agents }: { agents: PublicAgentStatus[] }) {
       </div>
 
       {/* Input */}
-      <div className="shrink-0 mb-5">
+      <div className="shrink-0 mb-4">
         <div className="flex gap-2">
           <input
             type="text"
@@ -611,20 +609,7 @@ function AskColumn({ agents }: { agents: PublicAgentStatus[] }) {
         </div>
       </div>
 
-      {/* Stats + CTA */}
-      {totalTasks > 0 && (
-        <div className="shrink-0 border border-dashed border-border p-3 mb-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Total tasks completed
-            </span>
-            <span className="text-lg font-bold text-primary tabular-nums">
-              {totalTasks.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      )}
-
+      {/* CTA */}
       <div className="shrink-0 border border-dashed border-border p-4">
         <p className="text-xs font-bold text-primary mb-1">Your own AI operator.</p>
         <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed">
