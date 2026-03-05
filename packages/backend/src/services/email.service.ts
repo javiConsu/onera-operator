@@ -236,107 +236,22 @@ Talk soon,
 Onera Operator
 COO for ${params.projectName}`;
 
+  const productLine = params.product ? `Here's what I picked up about your product: ${params.product}` : "";
+  const descLine = params.description ? params.description : "";
+  const researchBlock = [productLine, descLine].filter(Boolean).join("<br><br>");
+
   const html = `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${params.projectName} is live</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-    <tr>
-      <td align="center" style="padding: 32px 16px;">
-
-        <!-- Main card -->
-        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
-
-          <!-- Header bar -->
-          <tr>
-            <td style="padding: 16px 24px; border-bottom: 2px solid #0033CC;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">&gt; ONERA OPERATOR</span>
-                  </td>
-                  <td align="right">
-                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">WELCOME</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding: 24px 24px 8px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #141D33; line-height: 1.65;">
-
-              <p style="margin: 0 0 14px;">Hey ${ownerName},</p>
-
-              <p style="margin: 0 0 14px;">
-                I just finished going through
-                <a href="${params.website}" style="color: #0033CC; text-decoration: none; font-weight: 600;">${params.projectName}</a>
-                and I'm ready to get to work.
-              </p>
-
-              ${
-                params.product || params.description
-                  ? `<!-- Research findings -->
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 16px;">
-                      <tr>
-                        <td style="padding: 12px 16px; border: 1px dashed #A3B3D6; background: #FBFCFF;">
-                          <p style="margin: 0 0 4px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; font-weight: 600; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">What I picked up</p>
-                          ${params.product ? `<p style="margin: 4px 0; font-size: 13px; color: #141D33; line-height: 1.6;">${params.product}</p>` : ""}
-                          ${params.description ? `<p style="margin: 4px 0; font-size: 13px; color: #4B5363; line-height: 1.6;">${params.description}</p>` : ""}
-                        </td>
-                      </tr>
-                    </table>`
-                  : ""
-              }
-
-              <p style="margin: 0 0 14px;">
-                Your company email is set up:
-                <strong style="color: #0033CC;">${params.companyEmail}</strong>.
-                All outreach and updates will come from this address.
-              </p>
-
-              <p style="margin: 0 0 20px;">
-                I'm already planning your first batch of tasks: growth moves, outreach targets, competitive research. You can watch it happen live.
-              </p>
-
-            </td>
-          </tr>
-
-          <!-- CTA -->
-          <tr>
-            <td style="padding: 0 24px 24px;">
-              <table role="presentation" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="border: 2px solid #0033CC; background-color: #0033CC;">
-                    <a href="${dashboardUrl}" style="display: inline-block; padding: 8px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #FFFFFF; text-decoration: none; text-transform: uppercase; letter-spacing: 0.025em;">Open Dashboard &rarr;</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 16px 24px; border-top: 1px dashed #A3B3D6;">
-              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.05em;">
-                Onera Operator / COO for ${params.projectName}
-              </p>
-              <p style="margin: 4px 0 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #A3B3D6;">
-                ${params.companyEmail}
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background: #ffffff;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 32px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.65;">
+    Hey ${ownerName},<br><br>
+    I just finished going through <a href="${params.website}" style="color: #0033CC;">${params.projectName}</a> and I'm ready to get to work.<br><br>
+    ${researchBlock ? `${researchBlock}<br><br>` : ""}Your company email is set up: <strong>${params.companyEmail}</strong>. All outreach and updates will come from this address.<br><br>
+    I'm already planning your first batch of tasks: growth moves, outreach targets, competitive research. You can watch it happen live.<br><br>
+    <a href="${dashboardUrl}" style="color: #0033CC;">Open Dashboard</a><br><br>
+    <span style="color: #999; font-size: 12px;">Onera Operator, COO for ${params.projectName}</span>
+  </div>
 </body>
 </html>`;
 

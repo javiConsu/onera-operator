@@ -3,7 +3,7 @@ import { z } from "zod";
 import { EmailClient } from "@azure/communication-email";
 
 /**
- * Builds the notification email HTML matching the OneraOS blueprint aesthetic.
+ * Builds a plain-text-style HTML email. Minimal formatting, reads like a real email.
  */
 function buildNotificationHtml(params: {
   companyName: string;
@@ -11,81 +11,19 @@ function buildNotificationHtml(params: {
   message: string;
   dashboardUrl: string;
 }): string {
-  const paragraphs = params.message
-    .split("\n\n")
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => {
-      const html = p.replace(/\n/g, "<br>");
-      return `<p style="margin: 0 0 14px; line-height: 1.65; color: #141D33; font-size: 14px;">${html}</p>`;
-    })
-    .join("");
+  const body = params.message.replace(/\n/g, "<br>");
 
   return `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${params.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-    <tr>
-      <td align="center" style="padding: 32px 16px;">
-
-        <!-- Main card -->
-        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
-
-          <!-- Header bar -->
-          <tr>
-            <td style="padding: 16px 24px; border-bottom: 2px solid #0033CC;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #0033CC; text-transform: uppercase; letter-spacing: 0.05em;">&gt; ONERA OPERATOR</span>
-                  </td>
-                  <td align="right">
-                    <span style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; text-transform: uppercase; letter-spacing: 0.05em;">${params.companyName}</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding: 24px 24px 16px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-              ${paragraphs}
-            </td>
-          </tr>
-
-          <!-- CTA -->
-          <tr>
-            <td style="padding: 0 24px 24px;">
-              <table role="presentation" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="border: 2px solid #0033CC; background-color: #0033CC;">
-                    <a href="${params.dashboardUrl}" style="display: inline-block; padding: 8px 20px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #FFFFFF; text-decoration: none; text-transform: uppercase; letter-spacing: 0.025em;">View Dashboard &rarr;</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 16px 24px; border-top: 1px dashed #A3B3D6;">
-              <p style="margin: 0; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10px; color: #4B5363; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.05em;">
-                Onera Operator / COO for ${params.companyName}
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background: #ffffff;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 32px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.65;">
+    ${body}
+    <br><br>
+    <a href="${params.dashboardUrl}" style="color: #0033CC;">Open Dashboard</a>
+    <br><br>
+    <span style="color: #999; font-size: 12px;">Onera Operator, COO for ${params.companyName}</span>
+  </div>
 </body>
 </html>`;
 }

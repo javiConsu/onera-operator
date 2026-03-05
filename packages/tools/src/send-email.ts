@@ -3,40 +3,24 @@ import { z } from "zod";
 import { EmailClient } from "@azure/communication-email";
 
 /**
- * Converts plain-text email body into clean HTML matching the OneraOS blueprint aesthetic.
- * Preserves paragraph breaks, handles sign-off blocks, and keeps it minimal.
+ * Converts plain-text email body into minimal HTML.
+ * Just preserves paragraph breaks. No fancy styling.
  */
 function toCleanHtml(body: string): string {
-  const paragraphs = body
+  const html = body
     .split("\n\n")
-    .map((para) => para.trim())
+    .map((p) => p.trim())
     .filter(Boolean)
-    .map((para) => {
-      const html = para.replace(/\n/g, "<br>");
-      return `<p style="margin: 0 0 14px; line-height: 1.65; color: #141D33; font-size: 14px;">${html}</p>`;
-    })
-    .join("");
+    .map((p) => p.replace(/\n/g, "<br>"))
+    .join("<br><br>");
 
   return `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; background-color: #FBFCFF; background-image: linear-gradient(#E5ECFF 1px, transparent 1px), linear-gradient(90deg, #E5ECFF 1px, transparent 1px); background-size: 24px 24px;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-    <tr>
-      <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background: #FFFFFF; border: 1.5px dashed #A3B3D6;">
-          <tr>
-            <td style="padding: 24px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-              ${paragraphs}
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background: #ffffff;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 32px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.65;">
+    ${html}
+  </div>
 </body>
 </html>`;
 }
