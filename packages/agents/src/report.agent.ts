@@ -33,7 +33,7 @@ export async function runReportAgent(input: ReportAgentInput) {
       "\n- Outline tomorrow's priorities" +
       "\n- Include relevant metrics" +
       "\n- Use markdown formatting with bullet points (use * not -)" +
-      "\n- Use checkmarks for completed items" +
+      "\n- For completed items, prefix with a plain checkmark character (✓) not HTML entities" +
       "\n- Keep it scannable and actionable" +
       "\n\nWriting style:" +
       "\n- NEVER use dashes (--), em-dashes, or en-dashes. Use periods, commas, or colons instead." +
