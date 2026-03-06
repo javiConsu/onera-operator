@@ -113,6 +113,7 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         const result = await executor({
           taskDescription,
           projectContext,
+          projectId,
           onStep: (stepEvent) => {
             publishAgentEvent({
               type: stepEvent.type === "thinking" ? "thinking"

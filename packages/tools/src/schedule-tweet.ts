@@ -1,78 +1,42 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { TwitterApi } from "twitter-api-v2";
+import { prisma } from "@onera/database";
 
 /**
- * Schedule/Post Tweet Tool — posts to Twitter/X using the API v2.
+ * Schedule Tweet Tool — queues a tweet for manual posting by an admin.
  *
- * Requires Twitter API credentials:
- *   TWITTER_API_KEY, TWITTER_API_SECRET,
- *   TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET
- *
- * Falls back to a logged mock when credentials are not configured.
+ * Instead of posting directly to Twitter, this inserts into the TweetQueue
+ * table with PENDING status. An admin reviews and posts manually via X.
  */
 export const scheduleTweet = tool({
   description:
-    "Post a tweet to Twitter/X. Use this to publish content about the startup. " +
-    "Requires TWITTER_API_KEY and related credentials for live posting.",
+    "Queue a tweet for manual posting. The tweet will appear in the admin dashboard " +
+    "for review and manual posting on X/Twitter.",
   parameters: z.object({
-    tweet: z.string().max(280).describe("The tweet text to post (max 280 characters)"),
+    tweet: z.string().max(280).describe("The tweet text to queue (max 280 characters)"),
+    projectId: z.string().describe("The project ID this tweet belongs to"),
+    tone: z.string().optional().describe("The tone used to generate this tweet"),
     scheduledTime: z
       .string()
-      .describe("ISO datetime string for when to post. Use an empty string to post immediately."),
+      .optional()
+      .describe("ISO datetime string (ignored, kept for backward compat)"),
   }),
-  execute: async ({ tweet, scheduledTime: rawScheduledTime }) => {
-    const scheduledTime = rawScheduledTime.length > 0 ? rawScheduledTime : undefined;
-    const apiKey = process.env.TWITTER_API_KEY;
-    const apiSecret = process.env.TWITTER_API_SECRET;
-    const accessToken = process.env.TWITTER_ACCESS_TOKEN;
-    const accessTokenSecret = process.env.TWITTER_ACCESS_TOKEN_SECRET;
+  execute: async ({ tweet, projectId, tone }) => {
+    const queued = await prisma.tweetQueue.create({
+      data: {
+        projectId,
+        content: tweet,
+        tone: tone || "sharp",
+      },
+    });
 
-    const postTime = scheduledTime || new Date().toISOString();
-
-    if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
-      console.log(
-        `[scheduleTweet] Twitter credentials not set — would post:\n  Tweet: ${tweet}\n  Time: ${postTime}`
-      );
-      return {
-        status: "scheduled",
-        tweet,
-        scheduledTime: postTime,
-        platform: "twitter",
-        message: "Tweet logged (not posted). Set TWITTER_API_KEY/SECRET/ACCESS_TOKEN to enable live posting.",
-      };
-    }
-
-    try {
-      const client = new TwitterApi({
-        appKey: apiKey,
-        appSecret: apiSecret,
-        accessToken,
-        accessSecret: accessTokenSecret,
-      });
-
-      // Post immediately (scheduled tweets require Twitter Premium API)
-      const result = await client.v2.tweet(tweet);
-
-      console.log(`[scheduleTweet] Tweet posted: ${result.data.id}`);
-      return {
-        status: "posted",
-        tweet,
-        tweetId: result.data.id,
-        scheduledTime: postTime,
-        platform: "twitter",
-        url: `https://twitter.com/i/web/status/${result.data.id}`,
-      };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[scheduleTweet] Failed to post tweet:", message);
-      return {
-        status: "failed",
-        tweet,
-        scheduledTime: postTime,
-        platform: "twitter",
-        error: message,
-      };
-    }
+    console.log(`[scheduleTweet] Tweet queued for manual posting: ${queued.id}`);
+    return {
+      status: "queued",
+      tweet,
+      queueId: queued.id,
+      platform: "twitter",
+      message: "Tweet queued for admin review and manual posting.",
+    };
   },
 });

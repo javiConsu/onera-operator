@@ -12,6 +12,7 @@ export type StepEvent = {
 export type AgentExecutionInput = {
   taskDescription: string;
   projectContext: string;
+  projectId: string;
   onStep?: (event: StepEvent) => void;
 };
 

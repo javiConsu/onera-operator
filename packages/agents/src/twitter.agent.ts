@@ -1,11 +1,14 @@
-import { generateText } from "ai";
+import { generateText, tool } from "ai";
+import { z } from "zod";
 import { getModelForAgent } from "@onera/ai";
-import { generateTweet, scheduleTweet } from "@onera/tools";
+import { generateTweet } from "@onera/tools";
+import { prisma } from "@onera/database";
 import type { StepEvent } from "./registry.js";
 
 export interface TwitterAgentInput {
   taskDescription: string;
   projectContext: string;
+  projectId: string;
   onStep?: (event: StepEvent) => void;
 }
 
@@ -17,6 +20,31 @@ export interface TwitterAgentInput {
  */
 export async function runTwitterAgent(input: TwitterAgentInput) {
   const model = getModelForAgent("twitter");
+
+  const scheduleTweetForProject = tool({
+    description: "Queue a tweet for manual posting on X/Twitter.",
+    parameters: z.object({
+      tweet: z.string().max(280).describe("The tweet text to queue (max 280 characters)"),
+      tone: z.string().optional().describe("The tone used"),
+    }),
+    execute: async ({ tweet, tone }) => {
+      const queued = await prisma.tweetQueue.create({
+        data: {
+          projectId: input.projectId,
+          content: tweet,
+          tone: tone || "sharp",
+        },
+      });
+      console.log(`[scheduleTweet] Tweet queued: ${queued.id}`);
+      return {
+        status: "queued",
+        tweet,
+        queueId: queued.id,
+        platform: "twitter",
+        message: "Tweet queued for admin review and manual posting.",
+      };
+    },
+  });
 
   const result = await generateText({
     model,
@@ -43,7 +71,7 @@ export async function runTwitterAgent(input: TwitterAgentInput) {
       "\n- You do NOT create social media accounts or manage the user's accounts",
     tools: {
       generateTweet,
-      scheduleTweet,
+      scheduleTweet: scheduleTweetForProject,
     },
     maxSteps: 10,
     prompt:
