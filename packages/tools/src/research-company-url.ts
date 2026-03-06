@@ -10,7 +10,7 @@ export const researchCompanyUrl = tool({
     "then analyzes the company's product, target market, competitors, and generates " +
     "a comprehensive profile. Used when a new company is created to auto-populate context.",
   parameters: z.object({
-    url: z.string().url().describe("The company website URL to research"),
+    url: z.string().describe("The company website URL to research (must be a valid http/https URL)"),
     companyName: z.string().describe("The company name"),
   }),
   execute: async ({ url, companyName }) => {

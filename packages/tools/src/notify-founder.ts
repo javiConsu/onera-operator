@@ -53,11 +53,9 @@ export const notifyFounder = tool({
   parameters: z.object({
     founderEmail: z
       .string()
-      .email()
       .describe("The founder's email address (from 'Founder Email' in the startup context)"),
     companyEmail: z
       .string()
-      .email()
       .describe("The company sender email (from 'Company Email' in the startup context, e.g. companyname@onera.app)"),
     companyName: z
       .string()

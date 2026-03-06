@@ -16,7 +16,7 @@ export const webScraper = tool({
     "dynamic sites, and complex web apps. Use this to read websites, blog posts, " +
     "documentation, competitor pages, or any public URL.",
   parameters: z.object({
-    url: z.string().url().describe("The URL to fetch"),
+    url: z.string().describe("The URL to fetch (must be a valid http/https URL)"),
     maxLength: z
       .number()
       .describe("Maximum characters to return. Use 8000 for most pages."),
