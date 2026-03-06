@@ -25,14 +25,14 @@ export async function runTwitterAgent(input: TwitterAgentInput) {
     description: "Queue a tweet for manual posting on X/Twitter.",
     parameters: z.object({
       tweet: z.string().max(280).describe("The tweet text to queue (max 280 characters)"),
-      tone: z.string().optional().describe("The tone used"),
+      tone: z.string().describe("The tone used (e.g. sharp, professional, casual). Use 'sharp' as default."),
     }),
     execute: async ({ tweet, tone }) => {
       const queued = await prisma.tweetQueue.create({
         data: {
           projectId: input.projectId,
           content: tweet,
-          tone: tone || "sharp",
+          tone: tone,
         },
       });
       console.log(`[scheduleTweet] Tweet queued: ${queued.id}`);
