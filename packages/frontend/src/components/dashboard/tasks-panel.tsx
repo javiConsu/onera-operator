@@ -220,37 +220,88 @@ function CategoryPill({ category }: { category: string }) {
   );
 }
 
+/** Friendly agent display names */
+const AGENT_LABELS: Record<string, string> = {
+  outreach: "Outreach",
+  twitter: "Twitter",
+  research: "Research",
+  engineer: "Engineering",
+  planner: "Planner",
+  report: "Reports",
+};
+
+function agentLabel(name: string | null): string | null {
+  if (!name) return null;
+  return AGENT_LABELS[name] || name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Extracts a human-readable summary from the task result JSON */
 function parseResult(result: string | null): string | null {
   if (!result) return null;
   try {
     const r = JSON.parse(result) as Record<string, unknown>;
-    if (typeof r.error === "string") return `Error: ${r.error}`;
+    if (typeof r.error === "string") return r.error;
+    // The agent's text summary is the best thing to show
     if (typeof r.text === "string" && r.text.length > 0) return r.text;
-    return JSON.stringify(r, null, 2);
+    // For outreach results, summarize tool calls
+    if (Array.isArray(r.toolResults)) {
+      const sends = (r.toolResults as Array<{ tool: string; result: Record<string, unknown> }>)
+        .filter((tr) => tr.tool === "sendEmail" && (tr.result as Record<string, unknown>)?.status === "sent");
+      if (sends.length > 0) {
+        const recipients = sends.map((s) => (s.result as Record<string, unknown>).to).join(", ");
+        return `Sent ${sends.length} email${sends.length > 1 ? "s" : ""} to ${recipients}`;
+      }
+    }
+    // For tweets
+    if (typeof r.tweetId === "string") return "Tweet posted successfully";
+    // Fallback: don't dump raw JSON
+    if (typeof r.message === "string") return r.message;
+    return null;
   } catch {
-    return result;
+    // Plain text result
+    return result.length > 300 ? result.substring(0, 300) + "..." : result;
   }
+}
+
+/** Truncate description to first sentence for card display */
+function briefDescription(desc: string): string {
+  // Take first sentence (up to period, or first 120 chars)
+  const firstSentence = desc.match(/^[^.!?]+[.!?]/)?.[0];
+  if (firstSentence && firstSentence.length <= 120) return firstSentence;
+  if (desc.length <= 100) return desc;
+  return desc.substring(0, 100) + "...";
 }
 
 function ExpandedDetail({ task }: { task: Task }) {
   const parsedResult = parseResult(task.result);
   return (
-    <div className="mt-2 border-t border-dashed border-border/50 pt-2">
+    <div className="mt-2 border-t border-dashed border-border/50 pt-2 space-y-2">
+      {/* Full description (only when expanded, for tasks with long prompts) */}
+      {task.description.length > 120 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
+            Details
+          </p>
+          <p className="text-[10px] leading-relaxed text-muted-foreground line-clamp-6 whitespace-pre-wrap">
+            {task.description}
+          </p>
+        </div>
+      )}
       {parsedResult ? (
-        <>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
             Result
           </p>
           <p className="text-[10px] leading-relaxed text-foreground/80 line-clamp-8 whitespace-pre-wrap">
             {parsedResult}
           </p>
-        </>
+        </div>
       ) : (
         <p className="text-[10px] text-muted-foreground italic">
           {task.status === "PENDING"
-            ? "Waiting to be executed..."
+            ? "Queued — waiting to run"
             : task.status === "IN_PROGRESS"
-              ? "Agent is working on this..."
+              ? "Running now..."
               : "No result recorded."}
         </p>
       )}
@@ -274,26 +325,21 @@ function RunningTaskCard({
 
   return (
     <div
-      className="border-2 border-primary/40 bg-primary/5 p-4 space-y-2 cursor-pointer transition-colors"
+      className="border-2 border-primary/40 bg-primary/5 p-4 space-y-1.5 cursor-pointer transition-colors"
       onClick={onSelect}
     >
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
-        <h4 className="font-bold text-sm leading-tight flex-1">{task.title}</h4>
+        <h4 className="font-bold text-[13px] leading-tight flex-1 truncate">{task.title}</h4>
       </div>
-      {task.description && (
-        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
-          {task.description}
-        </p>
-      )}
       <div className="flex items-center gap-2 flex-wrap">
         <CategoryPill category={task.category} />
-        <span className="text-[10px] text-primary font-semibold">
-          Running for {elapsed || "0m 0s"}
-        </span>
-        {task.agentName && (
-          <span className="text-[10px] text-muted-foreground">· {task.agentName}</span>
+        {agentLabel(task.agentName) && (
+          <span className="text-[10px] text-muted-foreground">{agentLabel(task.agentName)}</span>
         )}
+        <span className="text-[10px] text-primary font-semibold ml-auto">
+          {elapsed || "0s"}
+        </span>
       </div>
       {isSelected && <ExpandedDetail task={task} />}
     </div>
@@ -316,18 +362,17 @@ function FailedTaskCard({
   onExecute?: (taskId: string) => void;
   executeError?: string;
 }) {
+  const errorSummary = parseResult(task.result);
+
   return (
     <div
-      className="border border-destructive/40 bg-destructive/5 p-4 space-y-2 cursor-pointer transition-colors hover:border-destructive/60"
+      className="border border-destructive/40 bg-destructive/5 p-4 space-y-1.5 cursor-pointer transition-colors hover:border-destructive/60"
       onClick={onSelect}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-destructive text-xs shrink-0">✕</span>
-          <h4 className="font-bold text-sm leading-tight text-foreground truncate">
-            {task.title}
-          </h4>
-        </div>
+        <h4 className="font-semibold text-xs leading-tight text-foreground flex-1 truncate">
+          {task.title}
+        </h4>
         {task.agentName && (
           <Button
             onClick={(e) => {
@@ -342,19 +387,18 @@ function FailedTaskCard({
           </Button>
         )}
       </div>
-      {task.description && (
-        <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-          {task.description}
-        </p>
+      {errorSummary && (
+        <p className="text-[10px] text-destructive/80 line-clamp-1">{errorSummary}</p>
       )}
       <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
         <CategoryPill category={task.category} />
-        <span className="text-destructive font-medium">failed</span>
-        {task.agentName && <span>· {task.agentName}</span>}
+        {agentLabel(task.agentName) && (
+          <span>{agentLabel(task.agentName)}</span>
+        )}
         <span className="ml-auto">{formatRelativeTime(task.updatedAt)}</span>
       </div>
       {executeError && (
-        <p className="text-[11px] text-destructive font-medium">{executeError}</p>
+        <p className="text-[10px] text-destructive font-medium">{executeError}</p>
       )}
       {isSelected && <ExpandedDetail task={task} />}
     </div>
@@ -378,21 +422,32 @@ function TaskCard({
   executeError?: string;
 }) {
   const isCompleted = task.status === "COMPLETED";
-  const canExecute = task.status === "PENDING" && !!task.agentName;
+  const isPending = task.status === "PENDING";
+  const canExecute = isPending && !!task.agentName;
+  const resultSummary = isCompleted ? parseResult(task.result) : null;
 
   return (
     <div
-      className={`border border-dashed p-4 space-y-2 cursor-pointer transition-colors ${
+      className={`border border-dashed p-3.5 space-y-1.5 cursor-pointer transition-colors ${
         isSelected
           ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/50"
+          : isCompleted
+            ? "border-border/60 hover:border-primary/40"
+            : "border-border hover:border-primary/50"
       }`}
       onClick={onSelect}
     >
       <div className="flex items-start justify-between gap-2">
-        <h4 className="font-semibold text-xs leading-tight flex-1">
-          {task.title}
-        </h4>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {isCompleted && (
+            <span className="text-green-600 text-[10px] shrink-0">✓</span>
+          )}
+          <h4 className={`font-semibold text-xs leading-tight truncate ${
+            isCompleted ? "text-muted-foreground" : "text-foreground"
+          }`}>
+            {task.title}
+          </h4>
+        </div>
         {canExecute && (
           <Button
             onClick={(e) => {
@@ -403,25 +458,32 @@ function TaskCard({
             size="sm"
             className="h-6 shrink-0 border-dashed px-2 py-1 text-[9px]"
           >
-            Do it now
+            Run
           </Button>
         )}
       </div>
-      {task.description && (
-        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
-          {task.description}
+      {/* For completed tasks, show result summary instead of description */}
+      {isCompleted && resultSummary ? (
+        <p className="text-[10px] text-muted-foreground/70 leading-relaxed line-clamp-1">
+          {resultSummary}
         </p>
-      )}
+      ) : !isCompleted && task.description ? (
+        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-1">
+          {briefDescription(task.description)}
+        </p>
+      ) : null}
       <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
         <CategoryPill category={task.category} />
-        <span className={isCompleted ? "" : ""}>
-          {isCompleted ? "✓ completed" : task.status.toLowerCase()}
-        </span>
-        {task.agentName && <span>· {task.agentName}</span>}
+        {agentLabel(task.agentName) && (
+          <span>{agentLabel(task.agentName)}</span>
+        )}
+        {isPending && (
+          <span className="text-amber-600">queued</span>
+        )}
         <span className="ml-auto">{formatRelativeTime(task.updatedAt)}</span>
       </div>
       {executeError && (
-        <p className="text-[11px] text-destructive font-medium">{executeError}</p>
+        <p className="text-[10px] text-destructive font-medium">{executeError}</p>
       )}
       {isSelected && <ExpandedDetail task={task} />}
     </div>
