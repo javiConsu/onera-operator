@@ -54,7 +54,8 @@ export function CompanyPanel({
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    // Reduced from 5s to 15s — this fires 4 parallel API calls per tick
+    const interval = setInterval(fetchData, 15_000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

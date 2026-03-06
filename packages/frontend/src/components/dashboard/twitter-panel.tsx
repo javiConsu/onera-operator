@@ -93,7 +93,8 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 8000);
+    // Reduced from 8s to 20s — tweets/emails change infrequently
+    const interval = setInterval(fetchData, 20_000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

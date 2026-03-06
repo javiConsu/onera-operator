@@ -144,18 +144,13 @@ export async function getRecentCompletedTasks(
 export async function getTaskMetrics(projectId: string) {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [completed, pending, failed, inProgress, completedToday, tweetsPostedToday, emailsSentToday] = await Promise.all([
-    prisma.task.count({
-      where: { projectId, status: TaskStatus.COMPLETED },
-    }),
-    prisma.task.count({
-      where: { projectId, status: TaskStatus.PENDING },
-    }),
-    prisma.task.count({
-      where: { projectId, status: TaskStatus.FAILED },
-    }),
-    prisma.task.count({
-      where: { projectId, status: TaskStatus.IN_PROGRESS },
+  // Consolidated: groupBy replaces 4 separate count queries (completed, pending, failed, inProgress).
+  // Total queries: 3 (groupBy + tweetQueue count + emailLog count) instead of 7.
+  const [statusGroups, completedToday, tweetsPostedToday, emailsSentToday] = await Promise.all([
+    prisma.task.groupBy({
+      by: ["status"],
+      where: { projectId },
+      _count: { _all: true },
     }),
     prisma.task.count({
       where: {
@@ -180,5 +175,17 @@ export async function getTaskMetrics(projectId: string) {
     }),
   ]);
 
-  return { completed, pending, failed, inProgress, completedToday, tweetsPostedToday, emailsSentToday };
+  const countByStatus = Object.fromEntries(
+    statusGroups.map((g) => [g.status, g._count._all])
+  ) as Record<string, number>;
+
+  return {
+    completed: countByStatus[TaskStatus.COMPLETED] ?? 0,
+    pending: countByStatus[TaskStatus.PENDING] ?? 0,
+    failed: countByStatus[TaskStatus.FAILED] ?? 0,
+    inProgress: countByStatus[TaskStatus.IN_PROGRESS] ?? 0,
+    completedToday,
+    tweetsPostedToday,
+    emailsSentToday,
+  };
 }

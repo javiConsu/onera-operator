@@ -41,7 +41,7 @@ export function startReportWorker(): Worker<SchedulerJob> {
 
       for (const project of projects) {
         try {
-          const projectContext = await buildProjectContext(project.id);
+          const projectContext = await buildProjectContext(project);
           const completedTasks = await getRecentCompletedTasks(
             project.id,
             20

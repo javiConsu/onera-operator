@@ -76,8 +76,8 @@ async function runAgentLoop(specificProjectId?: string) {
         { status: "running", lastRunAt: new Date() }
       );
 
-      // Build context
-      const projectContext = await buildProjectContext(project.id);
+      // Build context — pass the project object to avoid a redundant DB fetch
+      const projectContext = await buildProjectContext(project);
 
       // Get recent tasks for context
       const recentTasks = await listTasks({ projectId: project.id });

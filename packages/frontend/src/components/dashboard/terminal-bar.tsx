@@ -22,7 +22,8 @@ export function TerminalBar({ projectId }: TerminalBarProps) {
 
   useEffect(() => {
     fetchActivity();
-    const interval = setInterval(fetchActivity, 5000);
+    // Reduced from 5s to 15s — terminal logs are supplemented by SSE live-feed
+    const interval = setInterval(fetchActivity, 15_000);
     return () => clearInterval(interval);
   }, [fetchActivity]);
 

@@ -38,6 +38,44 @@ export const INTERNAL_SECRET =
   process.env.INTERNAL_API_SECRET || "onera-internal-2026";
 
 // ---------------------------------------------------------------------------
+// In-memory user cache — avoids a DB upsert/findUnique on every request.
+// Users rarely change profile info mid-session, so a 60s TTL is safe.
+// This eliminates the #1 source of connection pool pressure.
+// ---------------------------------------------------------------------------
+
+interface CachedUser {
+  user: AuthUser;
+  expiresAt: number;
+}
+
+const USER_CACHE_TTL_MS = 60_000; // 60 seconds
+const userCache = new Map<string, CachedUser>();
+
+function getCachedUser(userId: string): AuthUser | null {
+  const entry = userCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    userCache.delete(userId);
+    return null;
+  }
+  return entry.user;
+}
+
+function setCachedUser(user: AuthUser): void {
+  userCache.set(user.id, {
+    user,
+    expiresAt: Date.now() + USER_CACHE_TTL_MS,
+  });
+  // Prevent unbounded growth (very unlikely with few users, but safe)
+  if (userCache.size > 500) {
+    const now = Date.now();
+    for (const [key, val] of userCache) {
+      if (now > val.expiresAt) userCache.delete(key);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Auth middleware — verifies Clerk JWT and syncs user to DB
 // ---------------------------------------------------------------------------
 
@@ -65,18 +103,27 @@ export async function requireAuth(
     | undefined;
 
   if (internalSecret && internalUserId && internalSecret === INTERNAL_SECRET) {
-    // Look up the user from our DB (already synced from a prior real auth)
+    // Check in-memory cache first (avoids DB query on most tool calls)
+    const cached = getCachedUser(internalUserId);
+    if (cached) {
+      request.authUser = cached;
+      return;
+    }
+
+    // Cache miss — look up the user from our DB (already synced from a prior real auth)
     const { prisma } = await import("@onera/database");
     const user = await prisma.user.findUnique({
       where: { id: internalUserId },
     });
     if (user && user.email) {
-      request.authUser = {
+      const authUser: AuthUser = {
         id: user.id,
         email: user.email,
         name: user.name,
         image: user.image,
       };
+      setCachedUser(authUser);
+      request.authUser = authUser;
       return; // Authenticated via internal secret
     }
     // If user not found, fall through to normal auth
@@ -104,7 +151,14 @@ export async function requireAuth(
       return;
     }
 
-    // Fetch the full user profile from Clerk (includes email, name, image)
+    // Check in-memory cache — skip Clerk API + DB upsert if recently seen
+    const cached = getCachedUser(clerkUserId);
+    if (cached) {
+      request.authUser = cached;
+      return;
+    }
+
+    // Cache miss — fetch full user profile from Clerk (includes email, name, image)
     const clerkUser = await clerk.users.getUser(clerkUserId);
 
     const email =
@@ -131,8 +185,10 @@ export async function requireAuth(
       image: image || undefined,
     });
 
-    // Attach to request for downstream handlers
-    request.authUser = { id: clerkUserId, email, name, image };
+    // Cache and attach to request for downstream handlers
+    const authUser: AuthUser = { id: clerkUserId, email, name, image };
+    setCachedUser(authUser);
+    request.authUser = authUser;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     request.log.warn({ err: message }, "Auth verification failed");

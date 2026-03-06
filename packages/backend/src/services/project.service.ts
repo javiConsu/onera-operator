@@ -107,17 +107,38 @@ export async function getProjectOwner(
 /**
  * Build a text-based context string from a project, suitable for passing
  * into LLM prompts.
+ *
+ * Accepts either a projectId (will query DB) or a project object with
+ * optional user relation already loaded, avoiding redundant DB fetches
+ * when the caller already has the project in memory.
  */
 export async function buildProjectContext(
-  projectId: string
+  projectOrId: string | { id: string; name: string; description: string | null; product: string | null; targetUsers: string | null; competitors: string | null; goals: string | null; website: string | null; companyEmail: string | null; user?: { email: string | null; name: string | null } | null }
 ): Promise<string> {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: { user: { select: { email: true, name: true } } },
-  });
+  let project: {
+    id: string; name: string; description: string | null; product: string | null;
+    targetUsers: string | null; competitors: string | null; goals: string | null;
+    website: string | null; companyEmail: string | null;
+    user?: { email: string | null; name: string | null } | null;
+  };
 
-  if (!project) {
-    throw new Error(`Project not found: ${projectId}`);
+  if (typeof projectOrId === "string") {
+    const found = await prisma.project.findUnique({
+      where: { id: projectOrId },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!found) throw new Error(`Project not found: ${projectOrId}`);
+    project = found;
+  } else {
+    project = projectOrId;
+    // If the caller didn't include user data, fetch just the user
+    if (!project.user) {
+      const withUser = await prisma.project.findUnique({
+        where: { id: project.id },
+        select: { user: { select: { email: true, name: true } } },
+      });
+      project = { ...project, user: withUser?.user ?? null };
+    }
   }
 
   const parts = [

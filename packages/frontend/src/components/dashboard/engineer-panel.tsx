@@ -162,7 +162,8 @@ export function EngineerPanel({ projectId }: EngineerPanelProps) {
 
   useEffect(() => {
     fetchTasks();
-    const interval = setInterval(fetchTasks, 8000);
+    // Reduced from 8s to 20s — engineering tasks change infrequently
+    const interval = setInterval(fetchTasks, 20_000);
     return () => clearInterval(interval);
   }, [fetchTasks]);
 

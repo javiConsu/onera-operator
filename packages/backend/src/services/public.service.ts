@@ -35,7 +35,24 @@ export function projectSlug(projectId: string): string {
   return `${adj}-${noun}`;
 }
 
+// ---------------------------------------------------------------------------
+// In-memory cache for public live data — avoids 8 DB queries per request.
+// The public dashboard polls every 5-8s; a 15s TTL is fine for this data.
+// ---------------------------------------------------------------------------
+
+let _liveDataCache: { data: Awaited<ReturnType<typeof _getPublicLiveDataUncached>>; expiresAt: number } | null = null;
+const LIVE_DATA_TTL_MS = 15_000; // 15 seconds
+
 export async function getPublicLiveData() {
+  if (_liveDataCache && Date.now() < _liveDataCache.expiresAt) {
+    return _liveDataCache.data;
+  }
+  const data = await _getPublicLiveDataUncached();
+  _liveDataCache = { data, expiresAt: Date.now() + LIVE_DATA_TTL_MS };
+  return data;
+}
+
+async function _getPublicLiveDataUncached() {
   const [agents, recentTasks, recentLogs, stats] = await Promise.all([
     prisma.agentStatus.findMany({
       orderBy: { name: "asc" },
