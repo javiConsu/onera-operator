@@ -194,10 +194,15 @@ export function PublicLiveFeed({
       eventSource.onerror = () => {
         setConnected(false);
         eventSource?.close();
-        retryTimeout = setTimeout(connect, 3000);
+        // Back off: retry after 10s, then 30s, then stop
+        retryCount++;
+        if (retryCount < 3) {
+          retryTimeout = setTimeout(connect, retryCount * 10000);
+        }
       };
     }
 
+    let retryCount = 0;
     connect();
 
     return () => {
@@ -222,11 +227,6 @@ export function PublicLiveFeed({
             CONNECTED
           </span>
         )}
-        {!connected && lines.length === 0 && (
-          <span className="text-[9px] text-muted-foreground font-mono ml-auto">
-            CONNECTING...
-          </span>
-        )}
       </div>
 
       <div
@@ -235,9 +235,7 @@ export function PublicLiveFeed({
       >
         {lines.length === 0 && (
           <div className="text-xs text-muted-foreground/50 py-4 text-center">
-            {connected
-              ? "Waiting for agent activity..."
-              : "Connecting to live stream..."}
+            Waiting for agent activity...
           </div>
         )}
 

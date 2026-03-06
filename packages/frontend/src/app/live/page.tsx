@@ -144,15 +144,13 @@ function TerminalBar({ lines }: { lines: TerminalLine[] }) {
     el.scrollTop = el.scrollHeight;
   }, [lines]);
 
-  // Fallback lines when no real data
   const display =
     lines.length > 0
       ? lines
       : [
-          { text: "Initializing Onera Operator...", status: "success", timestamp: new Date().toISOString() },
-          { text: "Loading agents: planner, twitter, outreach, research", status: "success", timestamp: new Date().toISOString() },
-          { text: "Agent loop scheduled: every 4 hours", status: "success", timestamp: new Date().toISOString() },
-          { text: "Awaiting tasks...", status: "success", timestamp: new Date().toISOString() },
+          { text: "Onera Operator online", status: "success", timestamp: new Date().toISOString() },
+          { text: "Agents: planner, twitter, outreach, research, engineer", status: "success", timestamp: new Date().toISOString() },
+          { text: "Waiting for agent activity...", status: "success", timestamp: new Date().toISOString() },
         ];
 
   return (
