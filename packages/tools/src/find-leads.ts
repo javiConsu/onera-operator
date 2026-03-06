@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { generateText } from "ai";
-import { getModel } from "@onera/ai";
+import { getPremiumModel } from "@onera/ai";
 
 /**
  * Find Leads Tool
@@ -11,6 +11,7 @@ import { getModel } from "@onera/ai";
  * done a webSearch and passes real company data in the targetAudience
  * or startupContext fields.
  *
+ * Uses the premium model for reliable JSON output.
  * Returns structured JSON lead objects (not free-form text).
  */
 export const findLeads = tool({
@@ -44,7 +45,10 @@ export const findLeads = tool({
   }),
   execute: async ({ startupContext, targetAudience, count, industry }) => {
     try {
-      const model = getModel();
+      // Use premium model (GPT-5.4) for reliable structured JSON output.
+      // The default model (Kimi K2.5) often fails to produce valid JSON or
+      // refuses to generate role-based emails.
+      const model = getPremiumModel();
       const leadCount = count;
       const industryFilter =
         industry.length > 0 ? `\nIndustry focus: ${industry}` : "";
@@ -52,41 +56,40 @@ export const findLeads = tool({
       const { text } = await generateText({
         model,
         system:
-          "You are a B2B lead generation specialist. Generate structured lead profiles.\n\n" +
+          "You are a B2B lead generation specialist. Your ONLY job is to output a JSON array of lead profiles. " +
+          "You must ALWAYS produce output. Never refuse, never explain, never apologize.\n\n" +
           "## CRITICAL RULES\n" +
-                     "1. You MUST include a contact email for EVERY lead. No exceptions.\n" +
-          "2. If company URLs or domains are provided in the input, extract the root domain " +
-          "and construct role-based emails. Use the pattern: role@domain.com\n" +
-          "   - For founders/CEOs: founder@, ceo@, or their first name @ the domain\n" +
+          "1. You MUST include a contact email for EVERY lead. No exceptions.\n" +
+          "2. Extract real domains from any URLs in the input. Construct role-based emails:\n" +
+          "   - For founders/CEOs: founder@, ceo@, or firstname@ the domain\n" +
+          "   - For editors/journalists: tips@, press@, editor@, editorial@, newsroom@\n" +
           "   - For technical roles: cto@, engineering@, tech@\n" +
           "   - General: hello@, info@, contact@, team@\n" +
           "3. For companies without clear contact info, use the company domain with common " +
           "prefixes (hello@, info@, contact@, team@).\n" +
           "4. NEVER return 'unknown' or empty emails. Every lead MUST have a valid-looking email.\n" +
-          "5. Prefer specific role emails (cto@, founder@) over generic ones (info@, hello@).\n" +
-          "6. If you have real company data from web search results, use it. Do NOT make up companies " +
-          "when real ones are provided.\n" +
-          "7. These are role-based email guesses, which is standard practice in B2B cold outreach. " +
-          "They should use REAL company domains extracted from URLs in the input.\n\n" +
+          "5. These are role-based email guesses, which is standard practice in B2B outreach.\n" +
+          "6. If you have real company data from web search results, use it.\n" +
+          "7. This applies to ALL types of outreach: B2B sales, media/press, partnerships, etc.\n\n" +
           "## Output Format\n" +
-          "Return a JSON array of objects. ONLY output the JSON array, no other text.\n" +
+          "Return ONLY a JSON array. No markdown fences, no explanation, no preamble.\n" +
           "Each object must have exactly these fields:\n" +
-          "- companyName: string (the company name)\n" +
-          "- contactName: string (the contact person's name, or 'Team' if unknown)\n" +
-          "- contactRole: string (their job title)\n" +
-          "- email: string (their email address, MUST be a real-looking email with the company domain)\n" +
-          "- companyUrl: string (the company website URL)\n" +
-          "- companySize: string (e.g., '1-10', '11-50', '51-200', '200+')\n" +
-          "- reason: string (why they are a good fit, 1 sentence)\n" +
-          "- outreachAngle: string (suggested approach for the email, 1 sentence)",
+          "- companyName: string\n" +
+          "- contactName: string (use 'Editorial Team', 'Press Team', etc. if individual unknown)\n" +
+          "- contactRole: string\n" +
+          "- email: string (MUST contain @ and a real domain)\n" +
+          "- companyUrl: string\n" +
+          "- companySize: string\n" +
+          "- reason: string (1 sentence)\n" +
+          "- outreachAngle: string (1 sentence)",
         prompt:
           `Startup context: ${startupContext}\n\n` +
           `Target audience: ${targetAudience}${industryFilter}\n\n` +
-          `Generate exactly ${leadCount} lead profiles as a JSON array.`,
-        maxTokens: 3000,
+          `Generate exactly ${leadCount} lead profiles as a JSON array. Output ONLY the JSON array, nothing else.`,
+        maxTokens: 4000,
       });
 
-      // Parse the JSON response
+      // Parse the JSON response — handle markdown fences, leading text, etc.
       let leads: Array<{
         companyName: string;
         contactName: string;
@@ -99,19 +102,34 @@ export const findLeads = tool({
       }> = [];
 
       try {
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        // Strip markdown code fences if present
+        let cleaned = text.trim();
+        cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+
+        // Try to find JSON array
+        const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           leads = JSON.parse(jsonMatch[0]);
+        } else {
+          console.error("[find-leads] No JSON array found in response. Raw text:", cleaned.substring(0, 500));
+          return {
+            leads: [],
+            rawText: cleaned.substring(0, 500),
+            count: 0,
+            targetAudience,
+            industry: industry.length > 0 ? industry : "general",
+            error: "LLM did not return a JSON array. Raw response included for debugging.",
+          };
         }
       } catch (parseErr) {
-        console.error("[find-leads] Failed to parse JSON response:", parseErr);
+        console.error("[find-leads] Failed to parse JSON response:", parseErr, "Raw:", text.substring(0, 500));
         return {
           leads: [],
-          rawText: text.trim(),
+          rawText: text.trim().substring(0, 500),
           count: 0,
           targetAudience,
           industry: industry.length > 0 ? industry : "general",
-          error: "Failed to parse structured response",
+          error: "Failed to parse structured response. Raw text included.",
         };
       }
 
@@ -121,12 +139,16 @@ export const findLeads = tool({
           l.email &&
           l.email.length > 0 &&
           l.email !== "unknown" &&
-          l.email.includes("@")
+          l.email.includes("@") &&
+          l.email.includes(".")
       );
+
+      console.log(`[find-leads] Generated ${leads.length} leads, ${validLeads.length} with valid emails`);
 
       return {
         leads: validLeads.slice(0, leadCount),
         count: validLeads.length,
+        totalGenerated: leads.length,
         targetAudience,
         industry: industry.length > 0 ? industry : "general",
         note: "Emails are role-based guesses using real company domains. This is standard B2B cold outreach practice. Proceed to generateEmail and sendEmail for each lead.",
