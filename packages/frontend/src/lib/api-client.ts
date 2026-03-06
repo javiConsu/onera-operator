@@ -64,6 +64,8 @@ export const api = {
       const query = params.toString();
       return fetchApi<EmailLogEntry[]>(`/api/projects/${projectId}/emails${query ? `?${query}` : ""}`);
     },
+    email: (projectId: string, emailId: string) =>
+      fetchApi<EmailLogEntry & { body: string }>(`/api/projects/${projectId}/emails/${emailId}`),
   },
 
   tasks: {

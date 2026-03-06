@@ -16,8 +16,10 @@ interface ParsedTweet {
 }
 
 interface ParsedEmail {
+  id: string;
   subject: string;
   to: string;
+  status: string;
   sentAt: string;
 }
 
@@ -54,8 +56,10 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
 
       // Map email log entries to display format
       const parsedEmails: ParsedEmail[] = emailData.map((e) => ({
+        id: e.id,
         subject: e.subject,
         to: e.toEmail,
+        status: e.status,
         sentAt: e.sentAt,
       }));
       setEmails(parsedEmails);
@@ -129,26 +133,8 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
       >
         {emails.length > 0 ? (
           <div className="space-y-0">
-            {emails.slice(0, 5).map((email, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-2 text-xs py-2.5 border-b border-dashed border-border/50 last:border-0"
-              >
-                <span className="text-primary font-bold shrink-0 mt-0.5">
-                  &rarr;
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">
-                    {email.subject}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    To: {email.to}
-                  </p>
-                </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {formatRelativeTime(email.sentAt)}
-                </span>
-              </div>
+            {emails.slice(0, 10).map((email) => (
+              <EmailCard key={email.id} email={email} projectId={projectId} />
             ))}
           </div>
         ) : (
@@ -165,6 +151,74 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
           {emails.length > 0 ? `+ ${emails.length} email${emails.length !== 1 ? "s" : ""} in the past 24h` : `${emails.length} emails sent`}
         </div>
       </CollapsibleSection>
+    </div>
+  );
+}
+
+// ─── Expandable Email Card ────────────────────────────────────────────────
+
+const STATUS_BADGE: Record<string, string> = {
+  SENT: "text-green-600 bg-green-50 border-green-200",
+  FAILED: "text-red-600 bg-red-50 border-red-200",
+  BLOCKED: "text-yellow-600 bg-yellow-50 border-yellow-200",
+};
+
+function EmailCard({ email, projectId }: { email: ParsedEmail; projectId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [body, setBody] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggle = async () => {
+    if (!expanded && body === null) {
+      setLoading(true);
+      try {
+        const full = await api.projects.email(projectId, email.id);
+        setBody(full.body);
+      } catch {
+        setBody("Failed to load email body.");
+      }
+      setLoading(false);
+    }
+    setExpanded((prev) => !prev);
+  };
+
+  return (
+    <div
+      className="py-2.5 border-b border-dashed border-border/50 last:border-0 cursor-pointer"
+      onClick={handleToggle}
+    >
+      <div className="flex items-start gap-2 text-xs">
+        <span className="text-primary font-bold shrink-0 mt-0.5">
+          {expanded ? "▼" : "→"}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold truncate">{email.subject}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground truncate">
+              To: {email.to}
+            </p>
+            <span className={`text-[9px] px-1 py-0.5 border font-mono uppercase ${STATUS_BADGE[email.status] || "text-muted-foreground"}`}>
+              {email.status}
+            </span>
+          </div>
+        </div>
+        <span className="text-[10px] text-muted-foreground shrink-0">
+          {formatRelativeTime(email.sentAt)}
+        </span>
+      </div>
+      {expanded && (
+        <div className="mt-2 ml-5 p-3 border border-dashed border-border bg-muted/30">
+          {loading ? (
+            <p className="text-[11px] text-muted-foreground animate-pulse">Loading...</p>
+          ) : body ? (
+            <pre className="text-[11px] leading-relaxed text-foreground whitespace-pre-wrap font-mono break-words">
+              {body}
+            </pre>
+          ) : (
+            <p className="text-[11px] text-muted-foreground italic">No body available.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -317,4 +317,28 @@ export async function projectRoutes(app: FastifyInstance) {
 
     return reply.send(emails);
   });
+
+  // GET /api/projects/:id/emails/:emailId — single email with full body
+  app.get<{
+    Params: { id: string; emailId: string };
+  }>("/api/projects/:id/emails/:emailId", async (request, reply) => {
+    const userId = request.authUser!.id;
+    const { id: projectId, emailId } = request.params;
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+    });
+    if (!project) {
+      return reply.code(404).send({ error: "Project not found" });
+    }
+
+    const email = await prisma.emailLog.findFirst({
+      where: { id: emailId, projectId },
+    });
+    if (!email) {
+      return reply.code(404).send({ error: "Email not found" });
+    }
+
+    return reply.send(email);
+  });
 }
