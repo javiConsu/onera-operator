@@ -6,6 +6,8 @@ import {
   updateProject,
   deleteProject,
 } from "../services/project.service.js";
+import { createTask } from "../services/task.service.js";
+import { enqueueTaskExecution } from "../queue/task.queue.js";
 import { researchCompanyUrl } from "@onera/tools";
 import { getSchedulerQueue } from "../queue/scheduler.queue.js";
 import { provisionCompanyEmail, sendWelcomeEmail } from "../services/email.service.js";
@@ -121,6 +123,41 @@ export async function projectRoutes(app: FastifyInstance) {
             )
           );
 
+          // Create onboarding tweet as the very first task
+          try {
+            const productDesc = (research.product as string) || product || name;
+            const targetDesc = (research.targetUsers as string) || targetUsers || "its users";
+            const onboardingTask = await createTask({
+              projectId: project.id,
+              title: `Onboarding tweet: introduce ${name} to the portfolio`,
+              description:
+                `Write a first tweet announcing ${name} as the newest startup in the Onera Operator portfolio. ` +
+                `Highlight what ${name} does: ${productDesc}. ` +
+                `Focus on the specific pain point it solves for ${targetDesc}. ` +
+                `Tag the founder and/or company Twitter handle if available. ` +
+                `This is the welcome tweet, make it punchy and memorable.`,
+              category: "TWITTER" as const,
+              priority: "HIGH" as const,
+              automatable: true,
+              agentName: "twitter",
+            });
+            await enqueueTaskExecution({
+              taskId: onboardingTask.id,
+              projectId: project.id,
+              agentName: "twitter",
+              taskTitle: onboardingTask.title,
+              taskDescription: onboardingTask.description,
+            });
+            console.log(
+              `[projects] Queued onboarding tweet for "${name}"`
+            );
+          } catch (tweetErr) {
+            console.warn(
+              "[projects] Onboarding tweet failed:",
+              tweetErr instanceof Error ? tweetErr.message : tweetErr
+            );
+          }
+
           // Trigger the agent loop for the researched project
           try {
             const queue = getSchedulerQueue();
@@ -149,6 +186,37 @@ export async function projectRoutes(app: FastifyInstance) {
           err instanceof Error ? err.message : err
         );
       }
+    }
+
+    // Create onboarding tweet for non-researched projects too
+    try {
+      const onboardingTask = await createTask({
+        projectId: project.id,
+        title: `Onboarding tweet: introduce ${name} to the portfolio`,
+        description:
+          `Write a first tweet announcing ${name} as the newest startup in the Onera Operator portfolio. ` +
+          (product ? `Highlight what ${name} does: ${product}. ` : "") +
+          (targetUsers ? `Focus on the specific pain point it solves for ${targetUsers}. ` : "") +
+          `Tag the founder and/or company Twitter handle if available. ` +
+          `This is the welcome tweet, make it punchy and memorable.`,
+        category: "TWITTER" as const,
+        priority: "HIGH" as const,
+        automatable: true,
+        agentName: "twitter",
+      });
+      await enqueueTaskExecution({
+        taskId: onboardingTask.id,
+        projectId: project.id,
+        agentName: "twitter",
+        taskTitle: onboardingTask.title,
+        taskDescription: onboardingTask.description,
+      });
+      console.log(`[projects] Queued onboarding tweet for "${name}"`);
+    } catch (tweetErr) {
+      console.warn(
+        "[projects] Onboarding tweet failed:",
+        tweetErr instanceof Error ? tweetErr.message : tweetErr
+      );
     }
 
     // Trigger the agent loop immediately for this new project
