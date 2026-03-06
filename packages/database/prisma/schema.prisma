@@ -76,8 +76,9 @@ model Project {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  tasks   Task[]
-  reports DailyReport[]
+  tasks      Task[]
+  reports    DailyReport[]
+  tweetQueue TweetQueue[]
 
   @@index([userId])
   @@map("projects")
@@ -157,6 +158,23 @@ model DailyReport {
   @@map("daily_reports")
 }
 
+model TweetQueue {
+  id          String           @id @default(cuid())
+  projectId   String           @map("project_id")
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  content     String
+  tone        String           @default("sharp")
+  status      TweetQueueStatus @default(PENDING)
+  generatedAt DateTime         @default(now()) @map("generated_at")
+  postedAt    DateTime?        @map("posted_at")
+  postedBy    String?          @map("posted_by")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([projectId])
+  @@map("tweet_queue")
+}
+
 enum TaskCategory {
   GROWTH
   MARKETING
@@ -182,4 +200,10 @@ enum TaskStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum TweetQueueStatus {
+  PENDING
+  POSTED
+  DELETED
 }
