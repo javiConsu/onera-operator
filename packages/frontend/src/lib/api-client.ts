@@ -132,6 +132,7 @@ export const api = {
     subscribe: () =>
       fetchApi<{ checkoutUrl: string }>("/api/billing/subscribe", {
         method: "POST",
+        body: JSON.stringify({}),
       }),
     purchase: (packSlug: string) =>
       fetchApi<{ checkoutUrl: string }>("/api/billing/purchase", {
