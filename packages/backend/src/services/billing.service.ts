@@ -1,20 +1,39 @@
 import { prisma } from "@onera/database";
 
 // ─── Subscription Product ────────────────────────────────────────
-// DodoPayments subscription product (test_mode)
+// DodoPayments subscription product
 // $29/month, 500 credits per renewal, 3-day free trial
-export const SUBSCRIPTION_PRODUCT_ID = "pdt_0NZp7XVHocEtZtWuUzffY";
+//
+// Product IDs differ between test_mode and live_mode.
+// Set via env vars (DODO_SUBSCRIPTION_PRODUCT_ID, etc.) or fall back to test IDs.
+const isLive = process.env.DODO_PAYMENTS_ENVIRONMENT === "live_mode";
+
+// Test-mode product IDs (created on https://test.dodopayments.com)
+const TEST_SUBSCRIPTION_ID = "pdt_0NZp7XVHocEtZtWuUzffY";
+const TEST_GROWTH_ID       = "pdt_0NZp5BE9UAYTaMJTk1okg";
+const TEST_SCALE_ID        = "pdt_0NZp5BKBRQssPeowsoW4P";
+const TEST_POWER_ID        = "pdt_0NZp5BNmHqf19pQMPcN3x";
+const TEST_MEGA_ID         = "pdt_0NZp5BRB4RMv9CaC0KnYN";
+
+// Live-mode product IDs — set these env vars once you create products in Dodo live dashboard
+// If not set, falls back to test IDs (will fail in live mode until set)
+const LIVE_SUBSCRIPTION_ID = process.env.DODO_SUBSCRIPTION_PRODUCT_ID || "";
+const LIVE_GROWTH_ID       = process.env.DODO_GROWTH_PRODUCT_ID || "";
+const LIVE_SCALE_ID        = process.env.DODO_SCALE_PRODUCT_ID || "";
+const LIVE_POWER_ID        = process.env.DODO_POWER_PRODUCT_ID || "";
+const LIVE_MEGA_ID         = process.env.DODO_MEGA_PRODUCT_ID || "";
+
+export const SUBSCRIPTION_PRODUCT_ID = isLive ? LIVE_SUBSCRIPTION_ID : TEST_SUBSCRIPTION_ID;
 export const SUBSCRIPTION_CREDITS_PER_MONTH = 500;
 export const TRIAL_BONUS_CREDITS = 50;
 export const TRIAL_PERIOD_DAYS = 3;
 
 // ─── Credit Top-Up Packs (one-time purchases) ───────────────────
-// DodoPayments one-time product IDs (test_mode)
 export const CREDIT_PACKS = [
-  { slug: "growth-500", name: "Growth", credits: 500, price: 2900, dodoProductId: "pdt_0NZp5BE9UAYTaMJTk1okg" },
-  { slug: "scale-2000", name: "Scale", credits: 2000, price: 7900, dodoProductId: "pdt_0NZp5BKBRQssPeowsoW4P" },
-  { slug: "power-5000", name: "Power", credits: 5000, price: 14900, dodoProductId: "pdt_0NZp5BNmHqf19pQMPcN3x" },
-  { slug: "mega-15000", name: "Mega", credits: 15000, price: 29900, dodoProductId: "pdt_0NZp5BRB4RMv9CaC0KnYN" },
+  { slug: "growth-500", name: "Growth", credits: 500, price: 2900, dodoProductId: isLive ? LIVE_GROWTH_ID : TEST_GROWTH_ID },
+  { slug: "scale-2000", name: "Scale", credits: 2000, price: 7900, dodoProductId: isLive ? LIVE_SCALE_ID : TEST_SCALE_ID },
+  { slug: "power-5000", name: "Power", credits: 5000, price: 14900, dodoProductId: isLive ? LIVE_POWER_ID : TEST_POWER_ID },
+  { slug: "mega-15000", name: "Mega", credits: 15000, price: 29900, dodoProductId: isLive ? LIVE_MEGA_ID : TEST_MEGA_ID },
 ] as const;
 
 export const MAX_TWEETS_PER_DAY_PER_PROJECT = 3;
