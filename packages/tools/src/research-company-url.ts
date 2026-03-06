@@ -55,7 +55,6 @@ export const researchCompanyUrl = tool({
         '"competitors": ["...", "..."], "goals": ["...", "..."], "businessModel": "..." }\n\n' +
         "Be specific and actionable. Use the website content to ground your analysis in reality.",
       prompt: `Research this company:\nName: ${companyName}\nWebsite: ${url}${websiteSection}\n\nProvide the JSON analysis:`,
-      maxTokens: 1500,
     });
 
     // Parse JSON from the response

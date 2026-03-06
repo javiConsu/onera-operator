@@ -121,7 +121,6 @@ export const webSearch = tool({
           "Format your response as a JSON array of objects with 'title', 'snippet', and 'url' (use plausible URLs) fields. " +
           `Return at most ${maxResults} results. Return ONLY the JSON array, no other text.`,
         prompt: `Search query: "${query}"`,
-        maxTokens: 1000,
       });
 
       try {

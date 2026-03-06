@@ -272,7 +272,6 @@ Rules:
 
 ${context}`,
     prompt: question,
-    maxTokens: 800,
   });
 
   return text.trim();
