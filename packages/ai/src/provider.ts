@@ -123,7 +123,7 @@ function createModelForProvider(config: AIConfig): LanguageModel {
 // ─── Per-Agent Model Routing ────────────────────────────────────
 // Two-tier model strategy:
 //
-//   Premium (GPT-5.2)  — frontier intelligence for quality-critical work
+//   Premium (GPT-5.4)  — frontier intelligence for quality-critical work
 //   Default (Kimi K2.5) — cost-efficient 1T param model for volume work
 //
 // Routing table:
@@ -140,7 +140,7 @@ function createModelForProvider(config: AIConfig): LanguageModel {
 //   public     │ default   │ High volume visitor Q&A
 //
 // Both models run on the same Azure resource (same API key).
-// Configure AI_PREMIUM_MODEL=gpt-5.2 to activate the split.
+// Configure AI_PREMIUM_MODEL=gpt-5.4 to activate the split.
 // If AI_PREMIUM_MODEL is unset, all agents use the default model.
 
 const PREMIUM_AGENTS = new Set([
@@ -156,7 +156,7 @@ const agentModelCache: Record<string, LanguageModel> = {};
 /**
  * Get the optimal model for a specific agent.
  *
- * Premium agents (chat, outreach, research, engineer) get GPT-5.2.
+ * Premium agents (chat, outreach, research, engineer) get GPT-5.4.
  * All others get the default model (Kimi K2.5).
  * Falls back gracefully if premium model is not configured.
  */
