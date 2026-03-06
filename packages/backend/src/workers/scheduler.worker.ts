@@ -136,7 +136,7 @@ async function runAgentLoop(specificProjectId?: string) {
             category: t.category as TaskCategory,
             priority: t.priority as TaskPriority,
             automatable: t.automatable,
-            agentName: t.agentName ?? undefined,
+            agentName: t.agentName || undefined,
             credits: t.agentName ? (ACTION_CREDITS[t.agentName] ?? 1) : 1,
           }))
         );

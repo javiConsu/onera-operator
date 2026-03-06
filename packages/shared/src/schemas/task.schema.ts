@@ -45,9 +45,8 @@ export const plannedTaskSchema = z.object({
     .describe("Whether this task can be automated by an agent"),
   agentName: z
     .string()
-    .nullable()
     .describe(
-      "The agent that should handle this task (twitter, outreach, research, engineer) or null if manual. Use 'engineer' for ENGINEERING tasks, 'twitter' for TWITTER tasks, 'outreach' for OUTREACH tasks, 'research' for RESEARCH tasks."
+      "The agent that should handle this task (twitter, outreach, research, engineer) or an empty string if the task is manual/not automatable. Use 'engineer' for ENGINEERING tasks, 'twitter' for TWITTER tasks, 'outreach' for OUTREACH tasks, 'research' for RESEARCH tasks."
     ),
 });
 
