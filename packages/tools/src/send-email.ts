@@ -92,14 +92,18 @@ function validateEmail(subject: string, body: string, to: string): QualityCheckR
   }
 
   // 3. Must contain some form of sign-off (indicates a complete, professional email)
+  //    Relaxed: also accept name+title endings (e.g. "Shreyas\nCOO, CompanyName")
   const signOffPatterns = [
     "best regards", "best,", "regards,", "thanks,", "thank you",
     "cheers,", "sincerely,", "warm regards", "looking forward",
-    "talk soon", "kind regards",
+    "talk soon", "kind regards", "all the best",
   ];
   const hasSignOff = signOffPatterns.some((p) => lowerBody.includes(p));
-  if (!hasSignOff) {
-    failures.push("Missing sign-off. Email must end professionally (e.g. 'Best regards, ...').");
+  // Also accept a name + role/company block at the end (common in cold outreach)
+  const lastLines = body.trim().split("\n").slice(-4).join("\n").toLowerCase();
+  const hasNameBlock = /\b(coo|ceo|cto|founder|co-founder|director|vp|head of)\b/.test(lastLines);
+  if (!hasSignOff && !hasNameBlock) {
+    failures.push("Missing sign-off. Email must end professionally (e.g. 'Best regards, ...' or Name + Title).");
   }
 
   // 4. Must mention a company name / URL (not a vague anonymous email)

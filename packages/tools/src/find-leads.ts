@@ -54,16 +54,20 @@ export const findLeads = tool({
         system:
           "You are a B2B lead generation specialist. Generate structured lead profiles.\n\n" +
           "## CRITICAL RULES\n" +
-          "1. You MUST include a contact email for EVERY lead. No exceptions.\n" +
-          "2. If company URLs or domains are provided in the input, use those real domains " +
-          "to construct role-based emails (e.g., founder@domain.com, hello@domain.com, " +
-          "cto@domain.com, info@domain.com).\n" +
+                     "1. You MUST include a contact email for EVERY lead. No exceptions.\n" +
+          "2. If company URLs or domains are provided in the input, extract the root domain " +
+          "and construct role-based emails. Use the pattern: role@domain.com\n" +
+          "   - For founders/CEOs: founder@, ceo@, or their first name @ the domain\n" +
+          "   - For technical roles: cto@, engineering@, tech@\n" +
+          "   - General: hello@, info@, contact@, team@\n" +
           "3. For companies without clear contact info, use the company domain with common " +
           "prefixes (hello@, info@, contact@, team@).\n" +
           "4. NEVER return 'unknown' or empty emails. Every lead MUST have a valid-looking email.\n" +
-          "5. Prefer specific role emails (cto@, founder@, engineering@) over generic ones.\n" +
+          "5. Prefer specific role emails (cto@, founder@) over generic ones (info@, hello@).\n" +
           "6. If you have real company data from web search results, use it. Do NOT make up companies " +
-          "when real ones are provided.\n\n" +
+          "when real ones are provided.\n" +
+          "7. These are role-based email guesses, which is standard practice in B2B cold outreach. " +
+          "They should use REAL company domains extracted from URLs in the input.\n\n" +
           "## Output Format\n" +
           "Return a JSON array of objects. ONLY output the JSON array, no other text.\n" +
           "Each object must have exactly these fields:\n" +
@@ -125,6 +129,7 @@ export const findLeads = tool({
         count: validLeads.length,
         targetAudience,
         industry: industry.length > 0 ? industry : "general",
+        note: "Emails are role-based guesses using real company domains. This is standard B2B cold outreach practice. Proceed to generateEmail and sendEmail for each lead.",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

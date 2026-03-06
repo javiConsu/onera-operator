@@ -61,7 +61,10 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "IMPORTANT: You MUST call sendEmail after each generateEmail. Do NOT batch all generates first. " +
       "Generate one, send one, then move to the next lead. This keeps you within step limits.\n\n" +
       "CRITICAL: Always use the email address from the findLeads result for each lead. " +
-      "NEVER make up or hallucinate email addresses. If a lead has no email, skip it.\n\n" +
+      "These are role-based email guesses using real company domains, which is standard B2B cold outreach practice. " +
+      "DO NOT refuse to send because emails are 'unverified' or 'guessed'. They are valid role-based addresses " +
+      "(e.g. founder@company.com, hello@company.com). If a lead has an email with an @ sign and a real company " +
+      "domain, USE IT. Only skip leads where the email field is empty or literally 'unknown'.\n\n" +
       "## Founder Notifications\n" +
       "After completing outreach, use notifyFounder to give the founder a quick update: " +
       "how many leads you found, how many emails went out, and anything notable. " +

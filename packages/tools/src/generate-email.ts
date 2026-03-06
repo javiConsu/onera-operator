@@ -50,9 +50,10 @@ export const generateEmail = tool({
    * Line 2-3: Why you're reaching out. Reference something specific about their company.
    * Line 4-5: Your value prop. What your company does and how it's relevant to them.
    * Line 6: One clear, low-commitment CTA (e.g., "Would a 15-min call next week work?")
-   * Sign-off: Your name, title, company name, company URL
+   * Sign-off: MUST start with "Best regards," on its own line, then your name, title, company name, company URL on subsequent lines
 6. **Tone**: Professional, direct, genuine. Not salesy or gimmicky. No emojis.
 7. **Format**: First line must be "Subject: ..." then a blank line, then the body.
+8. **Sign-off is mandatory**: Every email MUST end with "Best regards," followed by name, title, company, URL. This is non-negotiable.
 
 ## Writing style:
 - NEVER use dashes (--), em-dashes, or en-dashes anywhere in the email. Use periods, commas, or colons instead.
