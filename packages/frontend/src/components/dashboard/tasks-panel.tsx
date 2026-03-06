@@ -216,8 +216,8 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
 
   useEffect(() => {
     fetchTasks();
-    // Poll every 10 seconds for live updates (reduced from 5s to ease DB pressure)
-    const interval = setInterval(fetchTasks, 10_000);
+    // Poll every 5 seconds — tasks panel is the primary view during agent runs
+    const interval = setInterval(fetchTasks, 5_000);
     return () => clearInterval(interval);
   }, [fetchTasks]);
 
