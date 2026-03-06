@@ -130,7 +130,7 @@ export default function ProjectSettingsPage() {
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between border-b-2 border-dashed border-border bg-background/90 px-8 py-4 backdrop-blur-sm">
         <Link href="/dashboard" className="font-serif text-3xl font-extrabold tracking-tight text-primary">
-          OneraOS
+          Onera Operator
         </Link>
       </header>
 

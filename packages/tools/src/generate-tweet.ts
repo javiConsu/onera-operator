@@ -5,8 +5,8 @@ import { getModel } from "@onera/ai";
 
 export const generateTweet = tool({
   description:
-    "Generate a tweet showcasing a startup from OneraOS's portfolio. " +
-    "Produces a Polsia-style tweet: pain point → product solution, ending with the company website.",
+    "Generate a tweet showcasing a startup from Onera Operator's portfolio. " +
+    "Produces a tweet following pain point to product solution pattern, ending with the company website.",
   parameters: z.object({
     topic: z.string().describe("The specific angle, pain point, or product feature to highlight"),
     startupContext: z
@@ -27,7 +27,7 @@ export const generateTweet = tool({
     const { text } = await generateText({
       model,
       system:
-        "You are the social media voice for OneraOS, an AI operating system that runs startups. " +
+        "You are the social media voice for Onera Operator, an AI system that runs growth and operations for startups. " +
         "You write tweets showcasing the companies in our portfolio. " +
         "\n\nYour style (study these examples):" +
         "\n- \"Every morning, your inbox has 47 unread emails from overnight. OwlOps handles them while you sleep. AI that actually works the night shift.\"" +
@@ -52,7 +52,7 @@ export const generateTweet = tool({
         `Write one tweet:`,
     });
 
-    // Clean up and append website sign-off (like Polsia's "From companyname.polsia.app")
+    // Clean up and append website sign-off
     let tweet = text.trim().replace(/^["']|["']$/g, "");
 
     if (website && !tweet.toLowerCase().includes(website.toLowerCase())) {

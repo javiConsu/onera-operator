@@ -183,7 +183,7 @@ async function crawlBasic(
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; OneraBot/1.0; +https://oneraos.com)",
+          "Mozilla/5.0 (compatible; OneraBot/1.0; +https://onera.chat)",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
       redirect: "follow",

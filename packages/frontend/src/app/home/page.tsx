@@ -30,7 +30,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between border-b-2 border-dashed border-border bg-background/90 px-8 py-4 relative z-10 backdrop-blur-sm">
         <span className="font-serif text-3xl font-extrabold tracking-tight text-primary">
-          OneraOS
+          Onera Operator
         </span>
         <div className="flex items-center gap-4">
           <Link
@@ -65,18 +65,18 @@ export default function LandingPage() {
           </div>
 
           <h1 className="font-serif text-5xl font-extrabold leading-[1.08] tracking-tight text-primary sm:text-6xl">
-            AI That Runs Your
+            Your Startup&apos;s
             <br />
-            Company While
+            Autonomous
             <br />
-            You Sleep.
+            Growth Engine.
           </h1>
 
           <p className="mt-8 text-sm leading-relaxed text-muted-foreground max-w-xl">
-            Onera Operator thinks, builds, and markets your projects
-            autonomously. It plans, codes, and promotes your ideas continuously
-            &mdash; operating 24/7, adapting to data, and improving itself
-            without human intervention.
+            Drop in your company URL. Onera Operator researches your product,
+            plans growth tasks, writes outreach emails, posts tweets, runs
+            competitor analysis, and sends you a daily report. Every 4 hours,
+            around the clock, with zero manual input.
           </p>
 
           {/* Live stats strip */}
@@ -115,26 +115,26 @@ export default function LandingPage() {
           <div className="mt-10 grid grid-cols-3 gap-4 max-w-xl">
             <div className="border border-dashed border-border p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Marketing
+                Outreach
               </p>
               <p className="text-xs font-semibold text-primary">
-                Auto tweets, cold outreach, lead gen
+                Cold emails, lead discovery, Twitter posts
               </p>
             </div>
             <div className="border border-dashed border-border p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Research
+                Intelligence
               </p>
               <p className="text-xs font-semibold text-primary">
-                Competitor analysis, web search
+                Deep web research, competitor tracking
               </p>
             </div>
             <div className="border border-dashed border-border p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Reports
+                Operations
               </p>
               <p className="text-xs font-semibold text-primary">
-                Daily ops reports, task planning
+                Daily reports, task planning, code execution
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function LandingPage() {
               Privacy
             </a>
             <a
-              href="mailto:contact@oneraos.com"
+              href="mailto:contact@onera.chat"
               className="hover:text-primary transition-colors"
             >
               Contact
@@ -214,7 +214,7 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
     lines.length > 0
       ? lines
       : [
-          "Initializing OneraOS...",
+          "Initializing Onera Operator...",
           "Agents online: planner, twitter, outreach, research",
           "Agent loop scheduled: every 4 hours",
           "System ready. Awaiting company setup",

@@ -72,7 +72,7 @@ export default function LivePage() {
         <div className="flex h-12 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <Link href="/home" className="font-serif text-2xl font-extrabold tracking-tight text-primary">
-              OneraOS
+              Onera Operator
             </Link>
             <span className="inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
@@ -80,7 +80,7 @@ export default function LivePage() {
             </span>
           </div>
           <Link href="/login">
-            <Button size="sm">Try OneraOS &rarr;</Button>
+            <Button size="sm">Try Onera Operator &rarr;</Button>
           </Link>
         </div>
       </header>
@@ -103,7 +103,7 @@ export default function LivePage() {
           />
         </CollapsibleColumn>
 
-        <CollapsibleColumn title="Ask OneraOS" isLast className="p-5 flex flex-col">
+        <CollapsibleColumn title="Ask Operator" isLast className="p-5 flex flex-col">
           <AskColumn />
         </CollapsibleColumn>
       </div>
@@ -159,7 +159,7 @@ function OperatorColumn({ data }: { data: PublicLiveData | null }) {
   return (
     <>
       {/* Operator face */}
-      <CollapsibleSection title="OneraOS">
+      <CollapsibleSection title="Onera Operator">
         <div className="border border-dashed border-border p-4 flex items-center gap-3">
           <div className="text-primary text-xs leading-none whitespace-pre font-bold shrink-0">
             {`| ^  ^ |
@@ -472,7 +472,7 @@ function SocialColumn({
 }
 
 // ---------------------------------------------------------------------------
-// Col 4 — Ask OneraOS + CTA
+// Col 4 — Ask Operator + CTA
 // ---------------------------------------------------------------------------
 interface ChatMessage {
   role: "user" | "assistant";
@@ -518,8 +518,8 @@ function AskColumn() {
 
   return (
     <>
-      {/* Ask OneraOS chat */}
-      <CollapsibleSection title="Ask OneraOS" className="flex-1 flex flex-col min-h-0">
+      {/* Ask Operator chat */}
+      <CollapsibleSection title="Ask Operator" className="flex-1 flex flex-col min-h-0">
         <p className="text-[10px] text-muted-foreground leading-relaxed mb-3">
           Ask anything about what the system is doing right now.
         </p>
@@ -561,7 +561,7 @@ function AskColumn() {
           {messages.map((msg, i) => (
             <div key={i}>
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
-                {msg.role === "user" ? "You" : "OneraOS"}
+                {msg.role === "user" ? "You" : "Operator"}
               </span>
               {msg.role === "user" ? (
                 <div className="text-xs leading-relaxed text-muted-foreground">
@@ -613,7 +613,7 @@ function AskColumn() {
           {loading && (
             <div className="text-xs text-primary animate-pulse">
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
-                OneraOS
+                Operator
               </span>
               Thinking...
             </div>
@@ -655,7 +655,7 @@ function AskColumn() {
       <div className="shrink-0 border border-dashed border-border p-4">
         <p className="text-xs font-bold text-primary mb-1">Your own AI operator.</p>
         <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed">
-          100 free credits. No card required. OneraOS starts working in minutes.
+          100 free credits. No card required. Onera Operator starts working in minutes.
         </p>
         <Link href="/login">
           <Button size="sm" className="w-full">

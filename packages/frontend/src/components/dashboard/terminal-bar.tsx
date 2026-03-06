@@ -36,7 +36,7 @@ export function TerminalBar({ projectId }: TerminalBarProps) {
     lines.length > 0
       ? lines
       : [
-          "Initializing OneraOS...",
+          "Initializing Onera Operator...",
           "Loading agents: planner, twitter, outreach, research, engineer",
           "Awaiting tasks...",
         ];

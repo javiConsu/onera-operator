@@ -45,7 +45,7 @@ export default function DashboardLayout({
             href="/dashboard"
             className="font-serif text-2xl font-extrabold tracking-tight text-primary"
           >
-            OneraOS
+            Onera Operator
           </Link>
 
           <div className="flex items-center gap-3">

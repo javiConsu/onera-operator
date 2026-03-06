@@ -90,7 +90,7 @@ This is your first email from your new company: ${projectName}!
 
 You now have a company email: ${companyEmail}
 
-${website ? `I've just finished researching ${projectName} (${website}). Here's what I found:` : `I've set up ${projectName} on OneraOS.`}
+${website ? `I've just finished researching ${projectName} (${website}). Here's what I found:` : `I've set up ${projectName} on Onera Operator.`}
 
 ${product ? `Product: ${product}` : ""}
 ${description ? `About: ${description}` : ""}
@@ -135,7 +135,7 @@ Check your dashboard to watch me work: ${dashboardUrl}
                 I've just finished researching
                 <a href="${website}" style="color: #2563eb; text-decoration: none;">${projectName}</a>.
                 Here's what I found:
-              </p>` : `<p style="margin: 0 0 20px;">I've set up <strong>${projectName}</strong> on OneraOS.</p>`}
+              </p>` : `<p style="margin: 0 0 20px;">I've set up <strong>${projectName}</strong> on Onera Operator.</p>`}
               ${product || description ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
                 <tr>
                   <td style="padding: 16px 20px; background: #f8fafc; border-left: 3px solid #2563eb; font-size: 14px; color: #334155; line-height: 1.6;">

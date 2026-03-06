@@ -116,7 +116,7 @@ export function startReportWorker(): Worker<SchedulerJob> {
             }),
           });
 
-          // Send daily digest email to the project owner (Polsia-style morning email)
+          // Send daily digest email to the project owner
           await sendDailyDigestEmail({
             projectId: project.id,
             projectName: project.name,

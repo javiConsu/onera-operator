@@ -50,7 +50,7 @@ export async function listReports(projectId: string, limit = 30) {
 
 /**
  * Send a daily digest email to the project owner via Azure Email Communication Service.
- * This mirrors Polsia's "morning email" feature where the AI sends
+ * Sends the AI's daily digest where it tells
  * the founder a summary of what was accomplished and what's planned.
  */
 export async function sendDailyDigestEmail(params: {

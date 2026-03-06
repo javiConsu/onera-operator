@@ -109,7 +109,7 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
         }
       >
         <div className="text-[10px] text-muted-foreground mb-1">
-          @oneraos
+          @onerachat
         </div>
 
         {tweets.length > 0 ? (

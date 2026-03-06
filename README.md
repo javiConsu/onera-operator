@@ -6,7 +6,7 @@ Onera Operator is an open-source AI COO — a self-running system that continuou
 
 Enter your company name and website URL. The system auto-researches your company, creates a plan, and starts executing -- all within minutes.
 
-> **Open-source alternative to [Polsia](https://polsia.com)** — built with Crawl4AI for deep web crawling, Resend for production email, E2B for sandboxed code execution, and the full Vercel AI SDK stack.
+> Built with Crawl4AI for deep web crawling, Azure Email for production email, E2B for sandboxed code execution, and the full Vercel AI SDK stack.
 
 ## How It Works
 

@@ -48,7 +48,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
             : "border-border bg-background text-primary hover:border-primary hover:bg-primary/5"
         )}
       >
-        {open ? "Close" : "> Ask OneraOS"}
+        {open ? "Close" : "> Ask Operator"}
       </button>
 
       {/* Chat panel */}
@@ -59,7 +59,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
           {/* Header */}
           <div className="shrink-0 border-b border-dashed border-border px-4 py-3">
             <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Ask OneraOS
+              Ask Operator
             </h3>
             <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
               Ask for status, create tasks, or request updates.
@@ -93,7 +93,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
             {messages.map((message) => (
               <div key={message.id}>
                 <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
-                  {message.role === "user" ? "You" : "OneraOS"}
+                  {message.role === "user" ? "You" : "Operator"}
                 </span>
                 {message.role === "user" ? (
                   <div className="text-xs leading-relaxed text-muted-foreground">
@@ -145,7 +145,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
             {isLoading && (
               <div>
                 <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
-                  OneraOS
+                  Operator
                 </span>
                 <div className="border-l-2 border-primary pl-3 text-xs text-primary animate-pulse">
                   thinking...

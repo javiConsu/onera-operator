@@ -42,7 +42,7 @@ export async function runPlannerAgent(input: PlannerInput) {
       "\n- Engineering tasks (agentName: engineer) can include: data analysis scripts, automation, web scraping, API integrations, analytics scripts" +
       "\n- ENGINEERING tasks are for technical automation work that can be executed as code" +
       "\n\nTWITTER TASK guidelines:" +
-      "\n- Twitter tasks are portfolio showcase tweets. We tweet FROM @oneraos ABOUT the onboarded startup." +
+      "\n- Twitter tasks are portfolio showcase tweets. We tweet FROM @onerachat ABOUT the onboarded startup." +
       "\n- Each tweet task should specify a SPECIFIC angle: a pain point the product solves, a feature highlight, or a user story" +
       "\n- Task descriptions must include the specific angle, e.g.: \"Tweet about how [product] solves [specific pain point] for [target users]\"" +
       "\n- DO NOT write generic tasks like \"Post a tweet about the company\" — be specific about the angle" +

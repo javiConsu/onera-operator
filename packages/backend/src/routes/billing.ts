@@ -52,7 +52,7 @@ export async function billingRoutes(app: FastifyInstance) {
         customer: {
           ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
-          name: user.name || "OneraOS User",
+          name: user.name || "Onera User",
         },
         subscription_data: {
           trial_period_days: TRIAL_PERIOD_DAYS,
@@ -106,7 +106,7 @@ export async function billingRoutes(app: FastifyInstance) {
         customer: {
           ...(user.dodoCustomerId ? { customer_id: user.dodoCustomerId } : {}),
           email: user.email || `${userId}@onera.chat`,
-          name: user.name || "OneraOS User",
+          name: user.name || "Onera User",
         },
         metadata: {
           userId,

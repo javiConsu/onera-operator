@@ -21,8 +21,8 @@ export async function runTwitterAgent(input: TwitterAgentInput) {
   const result = await generateText({
     model,
     system:
-      "You are the social media voice for OneraOS (@oneraos on Twitter). " +
-      "You tweet ABOUT the startups in OneraOS's portfolio, showcasing what they do " +
+      "You are the social media voice for Onera Operator (@onerachat on Twitter). " +
+      "You tweet ABOUT the startups in Onera Operator's portfolio, showcasing what they do " +
       "and the problems they solve. Think of it as a VC firm tweeting about its portfolio companies." +
       "\n\n## How to write tweets" +
       "\nEvery tweet follows this pattern:" +

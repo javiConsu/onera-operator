@@ -77,7 +77,7 @@ export default function DashboardPage() {
       <div className="flex h-full flex-col items-center justify-center gap-6">
         <div className="border-[1.5px] border-dashed border-border p-10 text-center max-w-md relative bp-corners">
           <h2 className="text-2xl font-bold text-primary mb-2">
-            Welcome to OneraOS
+            Welcome to Onera Operator
           </h2>
           <p className="text-xs text-muted-foreground mb-6">
             Create your first company to get started. The AI will automatically
@@ -154,7 +154,7 @@ export default function DashboardPage() {
         </CollapsibleColumn>
       </div>
 
-      {/* Floating Ask OneraOS chat widget */}
+      {/* Floating Ask Operator chat widget */}
       <AskPanel projectId={selectedProject?.id} />
     </div>
   );
