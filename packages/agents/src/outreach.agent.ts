@@ -1,6 +1,13 @@
 import { generateText } from "ai";
 import { getModelForAgent } from "@onera/ai";
-import { generateEmail, sendEmail, findLeads, notifyFounder } from "@onera/tools";
+import {
+  generateEmail,
+  sendEmail,
+  findLeads,
+  notifyFounder,
+  webSearch,
+  webScraper,
+} from "@onera/tools";
 import type { StepEvent } from "./registry.js";
 
 export interface OutreachAgentInput {
@@ -31,11 +38,15 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "## Writing style\n" +
       "NEVER use dashes (--), em-dashes, or en-dashes in any output. Use periods, commas, or colons instead.\n\n" +
       "## Workflow (follow this exactly)\n" +
-      "1. Use findLeads to identify relevant targets. Be ambitious. " +
-      "If the task specifies a number, use that. Otherwise, aim for 10 to 20 leads per run.\n" +
-      "   findLeads returns structured data: an array of lead objects, each with " +
-      "companyName, contactName, contactRole, email, companyUrl, reason, and outreachAngle.\n" +
-      "2. For EACH lead from the results, do a generate then send pair:\n" +
+      "1. FIRST, use webSearch to find REAL companies matching the target audience. " +
+      "Search for companies in the right industry/niche. Do 1 to 3 searches with " +
+      "different queries to get a good spread of results.\n" +
+      "2. THEN, use findLeads and pass the web search results into the targetAudience field. " +
+      "This converts raw search results into structured lead profiles with emails. " +
+      "findLeads returns an array of lead objects, each with companyName, contactName, " +
+      "contactRole, email, companyUrl, reason, and outreachAngle.\n" +
+      "   If the task specifies a number, use that. Otherwise, aim for 10 to 20 leads per run.\n" +
+      "3. For EACH lead from the results, do a generate then send pair:\n" +
       "   a. Call generateEmail using the lead's email, contactName, companyName, companyUrl, " +
       "contactRole, and the full startup context. Pass the lead's companyUrl as recipientCompanyUrl.\n" +
       "   b. Self-review the output: does it mention your company name + URL, the recipient's company, " +
@@ -46,7 +57,7 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "ALWAYS set 'replyTo' to the Founder Email from the startup context. " +
       "ALWAYS set 'projectId' to the Project ID from the startup context.\n" +
       "   d. If sendEmail returns 'rejected', fix the issues and retry once.\n" +
-      "3. After sending all emails, use notifyFounder to update the founder.\n\n" +
+      "4. After sending all emails, use notifyFounder to update the founder.\n\n" +
       "IMPORTANT: You MUST call sendEmail after each generateEmail. Do NOT batch all generates first. " +
       "Generate one, send one, then move to the next lead. This keeps you within step limits.\n\n" +
       "CRITICAL: Always use the email address from the findLeads result for each lead. " +
@@ -62,6 +73,8 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       sendEmail,
       findLeads,
       notifyFounder,
+      webSearch,
+      webScraper,
     },
     maxSteps: 50,
     prompt:
