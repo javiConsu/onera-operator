@@ -154,6 +154,30 @@ export const api = {
       `/api/activity${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`
     ),
 
+  admin: {
+    tweets: {
+      list: (filters?: { status?: string; projectId?: string; page?: number; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined) params.set(key, String(value));
+          });
+        }
+        const query = params.toString();
+        return fetchApi<QueuedTweetsResponse>(`/api/admin/tweets${query ? `?${query}` : ""}`);
+      },
+      update: (id: string, data: { content?: string; status?: string }) =>
+        fetchApi<QueuedTweet>(`/api/admin/tweets/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }),
+      regenerate: (id: string) =>
+        fetchApi<QueuedTweet>(`/api/admin/tweets/${id}/regenerate`, {
+          method: "POST",
+        }),
+    },
+  },
+
   health: () => fetchApi<HealthCheck>("/api/health"),
 };
 
@@ -357,6 +381,26 @@ export interface BillingSummary {
   autoChargeEnabled: boolean;
   recentTransactions: CreditTransaction[];
   packs: CreditPack[];
+}
+
+export interface QueuedTweet {
+  id: string;
+  projectId: string;
+  content: string;
+  tone: string;
+  status: "PENDING" | "POSTED" | "DELETED";
+  generatedAt: string;
+  postedAt: string | null;
+  postedBy: string | null;
+  updatedAt: string;
+  project?: { name: string };
+}
+
+export interface QueuedTweetsResponse {
+  tweets: QueuedTweet[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export const publicApi = {
