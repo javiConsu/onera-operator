@@ -14,6 +14,73 @@ export function formatDate(date: string | Date): string {
   });
 }
 
+// ─── Chat stream status parsing ──────────────────────────────────────────────
+// The backend interleaves %%STATUS%%{...}%%END%% markers in the text stream
+// so the frontend can show live "thinking" updates while tool calls run.
+
+const STATUS_RE = /%%STATUS%%(.*?)%%END%%\n?/g;
+
+export interface ChatStatus {
+  type: "tool-call" | "tool-result";
+  tool: string;
+}
+
+/** Human-friendly labels for tool names */
+const TOOL_LABELS: Record<string, string> = {
+  webSearch: "Searching the web",
+  webScraper: "Reading page",
+  generateEmail: "Drafting email",
+  sendEmail: "Sending email",
+  generateTweet: "Writing tweet",
+  scheduleTweet: "Scheduling tweet",
+  findLeads: "Finding leads",
+  competitorResearch: "Researching competitors",
+  summarizeContent: "Summarizing",
+  researchCompanyUrl: "Researching company",
+  executeCode: "Running code",
+  notifyFounder: "Notifying founder",
+  listProjectTasks: "Checking tasks",
+  createProjectTask: "Creating task",
+  updateProjectTask: "Updating task",
+  deleteProjectTask: "Deleting task",
+  executeProjectTask: "Executing task",
+};
+
+/**
+ * Extract status events and clean text from a raw streamed message.
+ * Returns the cleaned text (markers stripped) and the latest active status.
+ */
+export function parseChatStream(raw: string): {
+  text: string;
+  statuses: ChatStatus[];
+  activeLabel: string | null;
+} {
+  const statuses: ChatStatus[] = [];
+  let match;
+  STATUS_RE.lastIndex = 0;
+  while ((match = STATUS_RE.exec(raw)) !== null) {
+    try {
+      statuses.push(JSON.parse(match[1]) as ChatStatus);
+    } catch { /* skip malformed */ }
+  }
+
+  const text = raw.replace(STATUS_RE, "");
+
+  // Determine active label: last tool-call that doesn't have a matching tool-result
+  let activeLabel: string | null = null;
+  const pending = new Set<string>();
+  for (const s of statuses) {
+    if (s.type === "tool-call") pending.add(s.tool);
+    if (s.type === "tool-result") pending.delete(s.tool);
+  }
+  if (pending.size > 0) {
+    const lastPending = [...pending].pop()!;
+    activeLabel = TOOL_LABELS[lastPending] || lastPending;
+  }
+
+  return { text, statuses, activeLabel };
+}
+
 export function formatRelativeTime(date: string | Date): string {
   const now = new Date();
   const d = new Date(date);

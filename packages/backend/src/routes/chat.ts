@@ -71,15 +71,37 @@ export async function chatRoutes(app: FastifyInstance) {
       Connection: "keep-alive",
     });
 
-    // Stream text chunks to the response
+    // Stream full events so the frontend can show thinking/tool-call status.
+    // Status lines are prefixed with %%STATUS%% and are stripped from the
+    // final message content by the frontend.
     try {
-      for await (const chunk of result.textStream) {
-        reply.raw.write(chunk);
+      for await (const part of result.fullStream) {
+        switch (part.type) {
+          case "tool-call":
+            reply.raw.write(
+              `%%STATUS%%{"type":"tool-call","tool":"${part.toolName}"}%%END%%\n`
+            );
+            break;
+          case "tool-result":
+            reply.raw.write(
+              `%%STATUS%%{"type":"tool-result","tool":"${part.toolName}"}%%END%%\n`
+            );
+            break;
+          case "text-delta":
+            reply.raw.write(part.textDelta);
+            break;
+          case "error":
+            console.error("[chat] Stream error part:", part.error);
+            reply.raw.write(
+              `I encountered an error. Please try again.`
+            );
+            break;
+          // step-start, step-finish, finish, etc — skip silently
+        }
       }
     } catch (streamErr) {
       const errMsg = streamErr instanceof Error ? streamErr.message : String(streamErr);
       console.error("[chat] Stream error:", errMsg);
-      // If nothing was written yet, send a user-visible error as text
       reply.raw.write(
         `I encountered an error processing your request. Please try again. (${errMsg.slice(0, 200)})`
       );

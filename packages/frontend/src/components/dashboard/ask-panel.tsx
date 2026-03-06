@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, parseChatStream } from "@/lib/utils";
 
 interface AskPanelProps {
   projectId?: string;
@@ -90,59 +90,95 @@ export function AskPanel({ projectId }: AskPanelProps) {
               </div>
             )}
 
-            {messages.map((message) => (
-              <div key={message.id}>
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
-                  {message.role === "user" ? "You" : "Operator"}
-                </span>
-                {message.role === "user" ? (
-                  <div className="text-xs leading-relaxed text-muted-foreground">
-                    {message.content}
-                  </div>
-                ) : (
-                  <div className="border-l-2 border-primary pl-3 text-xs leading-relaxed prose-sm">
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => (
-                          <p className="text-xs leading-relaxed mb-1.5 last:mb-0">
-                            {children}
-                          </p>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-bold text-primary">
-                            {children}
-                          </strong>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="list-disc pl-4 space-y-0.5 mb-1.5">
-                            {children}
-                          </ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="list-decimal pl-4 space-y-0.5 mb-1.5">
-                            {children}
-                          </ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-xs leading-relaxed">
-                            {children}
-                          </li>
-                        ),
-                        code: ({ children }) => (
-                          <code className="bg-muted px-1 py-0.5 text-[10px] font-mono">
-                            {children}
-                          </code>
-                        ),
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
-                )}
-              </div>
-            ))}
+            {messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              const parsed = isAssistant ? parseChatStream(message.content) : null;
+              const displayText = parsed ? parsed.text : message.content;
+              // Show active status on the last assistant message while streaming
+              const isLastAssistant =
+                isAssistant &&
+                isLoading &&
+                message.id === messages.filter((m) => m.role === "assistant").at(-1)?.id;
+              const activeLabel = isLastAssistant ? parsed?.activeLabel : null;
 
-            {isLoading && (
+              return (
+                <div key={message.id}>
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
+                    {message.role === "user" ? "You" : "Operator"}
+                  </span>
+                  {message.role === "user" ? (
+                    <div className="text-xs leading-relaxed text-muted-foreground">
+                      {message.content}
+                    </div>
+                  ) : (
+                    <div className="border-l-2 border-primary pl-3 text-xs leading-relaxed prose-sm">
+                      {/* Live status indicator */}
+                      {activeLabel && (
+                        <div className="flex items-center gap-1.5 mb-2 text-[10px] text-primary animate-pulse font-mono">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+                          {activeLabel}...
+                        </div>
+                      )}
+                      {/* Completed steps summary */}
+                      {parsed && parsed.statuses.length > 0 && (
+                        <div className="mb-2 space-y-0.5">
+                          {parsed.statuses
+                            .filter((s) => s.type === "tool-result")
+                            .map((s, i) => (
+                              <div
+                                key={i}
+                                className="text-[10px] text-muted-foreground/70 font-mono"
+                              >
+                                ✓ {s.tool}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                      {displayText && (
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => (
+                              <p className="text-xs leading-relaxed mb-1.5 last:mb-0">
+                                {children}
+                              </p>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-bold text-primary">
+                                {children}
+                              </strong>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="list-disc pl-4 space-y-0.5 mb-1.5">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="list-decimal pl-4 space-y-0.5 mb-1.5">
+                                {children}
+                              </ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="text-xs leading-relaxed">
+                                {children}
+                              </li>
+                            ),
+                            code: ({ children }) => (
+                              <code className="bg-muted px-1 py-0.5 text-[10px] font-mono">
+                                {children}
+                              </code>
+                            ),
+                          }}
+                        >
+                          {displayText}
+                        </ReactMarkdown>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {isLoading && messages.filter((m) => m.role === "assistant").length === 0 && (
               <div>
                 <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
                   Operator

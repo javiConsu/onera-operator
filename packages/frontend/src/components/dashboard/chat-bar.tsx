@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, parseChatStream } from "@/lib/utils";
 
 interface ChatBarProps {
   projectId?: string;
@@ -58,37 +58,56 @@ export function ChatBar({ projectId }: ChatBarProps) {
             </Button>
           </div>
           <div className="p-4 space-y-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex items-start gap-2",
-                  message.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.role === "assistant" && (
-                  <span className="text-xs text-primary font-bold shrink-0 mt-0.5">
-                    AI&gt;
-                  </span>
-                )}
+            {messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              const parsed = isAssistant ? parseChatStream(message.content) : null;
+              const displayText = parsed ? parsed.text : message.content;
+              const isLastAssistant =
+                isAssistant &&
+                isLoading &&
+                message.id === messages.filter((m) => m.role === "assistant").at(-1)?.id;
+              const activeLabel = isLastAssistant ? parsed?.activeLabel : null;
+
+              return (
                 <div
+                  key={message.id}
                   className={cn(
-                    "px-3 py-2 text-xs max-w-[80%] leading-relaxed",
-                    message.role === "user"
-                      ? "border-2 border-primary bg-primary text-primary-foreground"
-                      : "border border-dashed border-border"
+                    "flex items-start gap-2",
+                    message.role === "user" ? "justify-end" : "justify-start"
                   )}
                 >
-                  {message.content}
+                  {isAssistant && (
+                    <span className="text-xs text-primary font-bold shrink-0 mt-0.5">
+                      AI&gt;
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      "px-3 py-2 text-xs max-w-[80%] leading-relaxed",
+                      message.role === "user"
+                        ? "border-2 border-primary bg-primary text-primary-foreground"
+                        : "border border-dashed border-border"
+                    )}
+                  >
+                    {activeLabel && (
+                      <div className="flex items-center gap-1.5 mb-1 text-[10px] text-primary animate-pulse font-mono">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+                        {activeLabel}...
+                      </div>
+                    )}
+                    {displayText || (isLastAssistant && !activeLabel && (
+                      <span className="animate-pulse text-primary">thinking...</span>
+                    ))}
+                  </div>
+                  {message.role === "user" && (
+                    <span className="text-xs text-muted-foreground font-bold shrink-0 mt-0.5">
+                      You
+                    </span>
+                  )}
                 </div>
-                {message.role === "user" && (
-                  <span className="text-xs text-muted-foreground font-bold shrink-0 mt-0.5">
-                    You
-                  </span>
-                )}
-              </div>
-            ))}
-            {isLoading && (
+              );
+            })}
+            {isLoading && messages.filter((m) => m.role === "assistant").length === 0 && (
               <div className="flex items-start gap-2">
                 <span className="text-xs text-primary font-bold shrink-0 mt-0.5">
                   AI&gt;
