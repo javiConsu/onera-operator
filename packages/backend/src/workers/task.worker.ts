@@ -17,6 +17,7 @@ import {
 } from "../services/billing.service.js";
 import { getExecutionAgent, AGENT_DISPLAY_NAMES } from "@onera/agents";
 import { publishAgentEvent } from "../services/activity.service.js";
+import { summarizeTaskResult } from "../services/summarizer.service.js";
 
 /**
  * Task Execution Worker
@@ -132,15 +133,15 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         });
 
         // Mark task as completed
-        await updateTaskStatus(
-          taskId,
-          "COMPLETED",
-          JSON.stringify({
-            text: result.text,
-            steps: result.steps,
-            toolResults: result.toolResults,
-          })
-        );
+        const resultJson = JSON.stringify({
+          text: result.text,
+          steps: result.steps,
+          toolResults: result.toolResults,
+        });
+        await updateTaskStatus(taskId, "COMPLETED", resultJson);
+
+        // Generate a human-readable summary via Kimi (fire-and-forget)
+        summarizeTaskResult(taskId, taskTitle, agentName, resultJson).catch(() => {});
 
         // Update agent status
         await upsertAgentStatus(agentName, displayName, {

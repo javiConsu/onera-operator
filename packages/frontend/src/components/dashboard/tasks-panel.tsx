@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, Task } from "@/lib/api-client";
@@ -386,41 +387,80 @@ function briefDescription(desc: string): string {
   return desc.substring(0, 100) + "...";
 }
 
+/** Reusable markdown renderer for task content */
+function TaskMarkdown({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => (
+          <p className="text-[11px] leading-relaxed mb-1.5 last:mb-0">{children}</p>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-bold text-foreground">{children}</strong>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc pl-4 space-y-0.5 mb-1.5 text-[11px]">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-4 space-y-0.5 mb-1.5 text-[11px]">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="text-[11px] leading-relaxed">{children}</li>
+        ),
+        h1: ({ children }) => (
+          <p className="text-xs font-bold mb-1">{children}</p>
+        ),
+        h2: ({ children }) => (
+          <p className="text-[11px] font-bold mb-1">{children}</p>
+        ),
+        h3: ({ children }) => (
+          <p className="text-[11px] font-semibold mb-0.5">{children}</p>
+        ),
+        code: ({ children }) => (
+          <code className="bg-muted px-1 py-0.5 text-[10px] font-mono">{children}</code>
+        ),
+        a: ({ href, children }) => (
+          <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
 function ExpandedDetail({ task }: { task: Task }) {
   const parsedResult = parseResult(task.result);
   const outreachEmails =
     task.category === "OUTREACH" && task.result
       ? parseOutreachEmails(task.result)
       : null;
+  const hasContent = task.summary || parsedResult || outreachEmails;
 
   return (
     <div className="mt-2 border-t border-dashed border-border/50 pt-2 space-y-2">
-      {/* Full description (only when expanded, for tasks with long prompts) */}
-      {task.description.length > 120 && (
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
-            Details
-          </p>
-          <p className="text-[10px] leading-relaxed text-muted-foreground line-clamp-6 whitespace-pre-wrap">
-            {task.description}
-          </p>
+      {/* Kimi-generated markdown summary (preferred) */}
+      {task.summary && (
+        <div className="text-muted-foreground">
+          <TaskMarkdown content={task.summary} />
         </div>
       )}
-      {outreachEmails ? (
+      {/* For outreach tasks, show email details below the summary */}
+      {outreachEmails && (
         <OutreachEmailList emails={outreachEmails} />
-      ) : parsedResult ? (
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
-            Result
-          </p>
-          <p className="text-[10px] leading-relaxed text-foreground/80 line-clamp-8 whitespace-pre-wrap">
-            {parsedResult}
-          </p>
+      )}
+      {/* Raw result fallback (when no Kimi summary and no outreach emails) */}
+      {parsedResult && !task.summary && !outreachEmails && (
+        <div className="text-muted-foreground">
+          <TaskMarkdown content={parsedResult} />
         </div>
-      ) : (
+      )}
+      {!hasContent && (
         <p className="text-[10px] text-muted-foreground italic">
           {task.status === "PENDING"
-            ? "Queued — waiting to run"
+            ? "Queued, waiting to run"
             : task.status === "IN_PROGRESS"
               ? "Running now..."
               : "No result recorded."}
@@ -545,7 +585,15 @@ function TaskCard({
   const isCompleted = task.status === "COMPLETED";
   const isPending = task.status === "PENDING";
   const canExecute = isPending && !!task.agentName;
-  const resultSummary = isCompleted ? parseResult(task.result) : null;
+  // For the collapsed card, show just the first line of the summary
+  const summaryFirstLine = (() => {
+    if (!isCompleted) return null;
+    const src = task.summary || parseResult(task.result);
+    if (!src) return null;
+    // Take first non-empty line, strip markdown bold markers for the preview
+    const firstLine = src.split("\n").find((l) => l.trim().length > 0) || src;
+    return firstLine.replace(/\*\*/g, "").substring(0, 120);
+  })();
 
   return (
     <div
@@ -583,10 +631,10 @@ function TaskCard({
           </Button>
         )}
       </div>
-      {/* For completed tasks, show result summary instead of description */}
-      {isCompleted && resultSummary ? (
+      {/* For completed tasks, show first line of summary; for others show brief description */}
+      {isCompleted && summaryFirstLine ? (
         <p className="text-[10px] text-muted-foreground/70 leading-relaxed line-clamp-1">
-          {resultSummary}
+          {summaryFirstLine}
         </p>
       ) : !isCompleted && task.description ? (
         <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-1">

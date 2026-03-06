@@ -224,6 +224,7 @@ export interface Task {
   automatable: boolean;
   agentName: string | null;
   result: string | null;
+  summary: string | null;
   scheduledFor: string | null;
   completedAt: string | null;
   createdAt: string;
