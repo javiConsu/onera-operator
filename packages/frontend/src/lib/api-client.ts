@@ -84,7 +84,7 @@ export const api = {
     execute: (id: string) =>
       fetchApi<{ message: string; taskId: string; agentName: string }>(
         `/api/tasks/${id}/execute`,
-        { method: "POST" }
+        { method: "POST", body: JSON.stringify({}) }
       ),
     metrics: (projectId: string) =>
       fetchApi<TaskMetrics>(`/api/tasks/metrics?projectId=${projectId}`),
