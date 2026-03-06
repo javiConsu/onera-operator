@@ -1,5 +1,5 @@
 import { prisma, TaskStatus } from "@onera/database";
-import { getModel } from "@onera/ai";
+import { getModelForAgent } from "@onera/ai";
 import { generateText } from "ai";
 
 /** Redact PII from a free-text string. */
@@ -170,7 +170,7 @@ export async function getPublicLiveData() {
 }
 
 // ---------------------------------------------------------------------------
-// Public "Ask OneraOS" — answers questions about current system state
+// Public "Ask Operator" — answers questions about current system state
 // ---------------------------------------------------------------------------
 
 /** Simple in-memory rate limiter per IP. */
@@ -225,7 +225,7 @@ export async function answerPublicQuestion(question: string): Promise<string> {
     .join("\n");
 
   const context = `
-## OneraOS System State (live snapshot)
+## Onera Operator System State (live snapshot)
 
 ### Stats
 - Total tasks completed: ${live.stats.totalTasksCompleted}
@@ -253,21 +253,21 @@ ${recentTweets || "No tweets yet."}
 ${recentEmails || "No emails yet."}
 `.trim();
 
-  // 3. Call the LLM
-  const model = getModel();
+  // 3. Call the LLM (public agent — uses default/cheap model)
+  const model = getModelForAgent("public");
   const { text } = await generateText({
     model,
-    system: `You are OneraOS, an autonomous AI operating system that runs marketing, outreach, research, and engineering tasks for companies.
+    system: `You are Onera Operator, an autonomous AI system that runs marketing, outreach, research, and engineering tasks for companies.
 
 You are answering questions on the public /live dashboard. Visitors can see the dashboard and ask you what's going on.
 
 Rules:
-- Be concise (2-4 sentences max). Speak in first person as "I" or "we" (the OneraOS system).
+- Be concise (2-4 sentences max). Speak in first person as "I" or "we" (the Onera Operator system).
 - Only answer based on the system state provided below. Do not make up information.
 - If nothing is happening, say so honestly. For example: "I'm idle right now, waiting for the next scheduled run."
 - Never reveal private details like real company names, emails, API keys, or internal IDs. The data has been redacted; keep it that way.
 - Be friendly but professional. You're a live system responding to a curious visitor.
-- If the question is unrelated to OneraOS or what you're doing, politely redirect: "I can only tell you about what OneraOS is doing right now."
+- If the question is unrelated to Onera Operator or what you're doing, politely redirect: "I can only tell you about what Onera Operator is doing right now."
 - NEVER use dashes (--), em-dashes, or en-dashes. Use periods, commas, or colons instead.
 
 ${context}`,

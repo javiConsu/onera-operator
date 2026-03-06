@@ -57,6 +57,14 @@ param aiBaseUrl string = ''
 param aiAzureResourceName string = ''
 param aiAzureDeploymentName string = ''
 
+// --- Premium (frontier) model for quality-critical agents ---
+param aiPremiumModel string = ''
+param aiPremiumProvider string = ''
+@secure()
+param aiPremiumApiKey string = ''
+param aiPremiumBaseUrl string = ''
+param aiPremiumAzureDeploymentName string = ''
+
 @secure()
 param exaApiKey string = ''
 
@@ -150,6 +158,11 @@ resource backend 'Microsoft.Web/sites@2023-01-01' = {
         { name: 'AI_BASE_URL',                       value: aiBaseUrl }
         { name: 'AI_AZURE_RESOURCE_NAME',            value: aiAzureResourceName }
         { name: 'AI_AZURE_DEPLOYMENT_NAME',          value: aiAzureDeploymentName }
+        { name: 'AI_PREMIUM_MODEL',                  value: aiPremiumModel }
+        { name: 'AI_PREMIUM_PROVIDER',               value: aiPremiumProvider }
+        { name: 'AI_PREMIUM_API_KEY',                value: aiPremiumApiKey }
+        { name: 'AI_PREMIUM_BASE_URL',               value: aiPremiumBaseUrl }
+        { name: 'AI_PREMIUM_AZURE_DEPLOYMENT_NAME',  value: aiPremiumAzureDeploymentName }
         { name: 'EXA_API_KEY',                       value: exaApiKey }
         { name: 'FRONTEND_URL',                      value: frontendUrl }
         { name: 'CLERK_SECRET_KEY',                  value: clerkSecretKey }

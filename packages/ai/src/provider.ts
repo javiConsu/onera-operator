@@ -3,10 +3,12 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createAzure } from "@ai-sdk/azure";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModel } from "ai";
-import { loadAIConfig, type AIConfig } from "./config.js";
+import { loadAIConfig, loadPremiumAIConfig, type AIConfig } from "./config.js";
 
 let cachedModel: LanguageModel | null = null;
 let cachedConfig: AIConfig | null = null;
+let cachedPremiumModel: LanguageModel | null = null;
+let cachedPremiumConfig: AIConfig | null = null;
 
 /**
  * Creates a language model instance based on the configured provider.
@@ -32,6 +34,29 @@ export function getModel(configOverride?: Partial<AIConfig>): LanguageModel {
   cachedConfig = config;
   cachedModel = createModelForProvider(config);
   return cachedModel;
+}
+
+/**
+ * Returns the premium (frontier) model for quality-critical tasks.
+ * Falls back to the default model if AI_PREMIUM_MODEL is not configured.
+ */
+export function getPremiumModel(): LanguageModel {
+  const premiumConfig = loadPremiumAIConfig();
+  if (!premiumConfig) return getModel();
+
+  if (
+    cachedPremiumModel &&
+    cachedPremiumConfig &&
+    cachedPremiumConfig.provider === premiumConfig.provider &&
+    cachedPremiumConfig.model === premiumConfig.model &&
+    cachedPremiumConfig.apiKey === premiumConfig.apiKey
+  ) {
+    return cachedPremiumModel;
+  }
+
+  cachedPremiumConfig = premiumConfig;
+  cachedPremiumModel = createModelForProvider(premiumConfig);
+  return cachedPremiumModel;
 }
 
 function createModelForProvider(config: AIConfig): LanguageModel {
@@ -96,63 +121,66 @@ function createModelForProvider(config: AIConfig): LanguageModel {
 }
 
 // ─── Per-Agent Model Routing ────────────────────────────────────
-// Users never see which model runs. We pick the optimal model per agent
-// to maximize margin while maintaining quality.
+// Two-tier model strategy:
 //
-// Routing table (internal only):
-//   planner  → Kimi K2.5     (structured output, cheap)
-//   twitter  → Kimi K2.5     (short-form, doesn't need frontier)
-//   outreach → default model  (quality matters for emails)
-//   research → default model  (good reasoning needed)
-//   engineer → default model  (best for code gen)
-//   report   → Kimi K2.5     (structured summary, cheap)
-//   chat     → default model  (user-facing, quality matters)
-//   public   → Kimi K2.5     (high volume, low-value)
+//   Premium (GPT-5.2)  — frontier intelligence for quality-critical work
+//   Default (Kimi K2.5) — cost-efficient 1T param model for volume work
 //
-// The "default model" is whatever AI_PROVIDER/AI_MODEL is configured to.
-// Cheap agents use the env-configured Azure Kimi K2.5 which is already the default.
-// When you add Sonnet/GPT keys, override specific agents here.
+// Routing table:
+//   Agent      │ Tier      │ Rationale
+//   ───────────┼───────────┼──────────────────────────────────────
+//   chat       │ premium   │ User-facing, quality = UX
+//   outreach   │ premium   │ Email quality drives conversion
+//   research   │ premium   │ Needs strong reasoning and synthesis
+//   engineer   │ premium   │ Code gen needs frontier intelligence
+//   ───────────┼───────────┼──────────────────────────────────────
+//   planner    │ default   │ Structured output, task decomposition
+//   twitter    │ default   │ Short-form, Kimi handles well
+//   report     │ default   │ Structured summary, cost-efficient
+//   public     │ default   │ High volume visitor Q&A
+//
+// Both models run on the same Azure resource (same API key).
+// Configure AI_PREMIUM_MODEL=gpt-5.2 to activate the split.
+// If AI_PREMIUM_MODEL is unset, all agents use the default model.
 
-const AGENT_MODEL_OVERRIDES: Record<string, Partial<AIConfig>> = {
-  // Currently all agents use the default model (Kimi K2.5 via Azure).
-  // When you add OpenAI/Anthropic keys, uncomment overrides:
-  //
-  // outreach: { provider: "anthropic", model: "claude-sonnet-4-20250514", apiKey: process.env.ANTHROPIC_API_KEY || "" },
-  // research: { provider: "openai", model: "gpt-4o", apiKey: process.env.OPENAI_API_KEY || "" },
-  // engineer: { provider: "openai", model: "gpt-4o", apiKey: process.env.OPENAI_API_KEY || "" },
-  // chat:     { provider: "anthropic", model: "claude-sonnet-4-20250514", apiKey: process.env.ANTHROPIC_API_KEY || "" },
-};
+const PREMIUM_AGENTS = new Set([
+  "chat",
+  "outreach",
+  "research",
+  "engineer",
+]);
 
 // Cache per agent to avoid re-creating models
 const agentModelCache: Record<string, LanguageModel> = {};
 
 /**
  * Get the optimal model for a specific agent.
- * Falls back to the default model if no override is configured.
+ *
+ * Premium agents (chat, outreach, research, engineer) get GPT-5.2.
+ * All others get the default model (Kimi K2.5).
+ * Falls back gracefully if premium model is not configured.
  */
 export function getModelForAgent(agentName: string): LanguageModel {
   if (agentModelCache[agentName]) {
     return agentModelCache[agentName];
   }
 
-  const override = AGENT_MODEL_OVERRIDES[agentName];
-  if (override && override.apiKey) {
-    const model = getModel(override);
-    agentModelCache[agentName] = model;
-    return model;
-  }
+  const model = PREMIUM_AGENTS.has(agentName)
+    ? getPremiumModel()
+    : getModel();
 
-  // No override — use default model
-  return getModel();
+  agentModelCache[agentName] = model;
+  return model;
 }
 
 /**
- * Clears the cached model. Useful when config changes at runtime.
+ * Clears all cached models. Useful when config changes at runtime.
  */
 export function resetModel(): void {
   cachedModel = null;
   cachedConfig = null;
-  // Clear agent cache too
+  cachedPremiumModel = null;
+  cachedPremiumConfig = null;
   for (const key of Object.keys(agentModelCache)) {
     delete agentModelCache[key];
   }
