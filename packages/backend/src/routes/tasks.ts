@@ -14,7 +14,10 @@ import {
   TaskStatus,
   type TaskCategory,
   type TaskPriority,
+  prisma,
 } from "@onera/database";
+import { ACTION_CREDITS } from "../services/billing.service.js";
+import { getProjectOwner } from "../services/project.service.js";
 
 export async function taskRoutes(app: FastifyInstance) {
   // List tasks with optional filters
@@ -211,6 +214,24 @@ export async function taskRoutes(app: FastifyInstance) {
         return reply
           .code(400)
           .send({ error: "Task has no assigned agent — cannot execute automatically" });
+      }
+
+      // Pre-check credits before queuing
+      const creditCost = ACTION_CREDITS[task.agentName] ?? 5;
+      if (creditCost > 0) {
+        const userId = await getProjectOwner(task.projectId);
+        if (userId) {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { credits: true },
+          });
+          const credits = user?.credits ?? 0;
+          if (credits < creditCost) {
+            return reply.code(402).send({
+              error: `Insufficient credits. This task requires ${creditCost} credits but you have ${credits}. Please top up to continue.`,
+            });
+          }
+        }
       }
 
       await enqueueTaskExecution({

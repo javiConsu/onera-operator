@@ -39,6 +39,7 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [executingIds, setExecutingIds] = useState<Set<string>>(new Set());
+  const [errorByTaskId, setErrorByTaskId] = useState<Record<string, string>>({});
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -54,12 +55,18 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
   const handleExecuteTask = useCallback(
     async (taskId: string) => {
       setExecutingIds((prev) => new Set(prev).add(taskId));
+      setErrorByTaskId((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
       try {
         await api.tasks.execute(taskId);
         // Re-fetch to show updated status
         fetchTasks();
       } catch (err) {
-        console.error("Failed to execute task:", err);
+        const message = err instanceof Error ? err.message : "Failed to execute task";
+        setErrorByTaskId((prev) => ({ ...prev, [taskId]: message }));
       } finally {
         setExecutingIds((prev) => {
           const next = new Set(prev);
@@ -130,6 +137,7 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
               setSelectedTaskId((prev) => (prev === task.id ? null : task.id))
             }
             onExecute={handleExecuteTask}
+            executeError={errorByTaskId[task.id]}
           />
         ))}
         {tasks.length === 0 && (
@@ -159,11 +167,13 @@ function TaskCard({
   isSelected,
   onSelect,
   onExecute,
+  executeError,
 }: {
   task: Task;
   isSelected: boolean;
   onSelect: () => void;
   onExecute?: (taskId: string) => void;
+  executeError?: string;
 }) {
   const isRunning = task.status === "IN_PROGRESS";
   const elapsed = useElapsedTime(task.updatedAt, isRunning);
@@ -246,6 +256,12 @@ function TaskCard({
           </Badge>
         )}
       </div>
+
+      {executeError && (
+        <p className="text-[11px] text-destructive font-medium">
+          {executeError}
+        </p>
+      )}
 
       {/* Expanded detail section */}
       {isSelected && (
