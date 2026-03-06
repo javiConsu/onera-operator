@@ -72,8 +72,17 @@ export async function chatRoutes(app: FastifyInstance) {
     });
 
     // Stream text chunks to the response
-    for await (const chunk of result.textStream) {
-      reply.raw.write(chunk);
+    try {
+      for await (const chunk of result.textStream) {
+        reply.raw.write(chunk);
+      }
+    } catch (streamErr) {
+      const errMsg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+      console.error("[chat] Stream error:", errMsg);
+      // If nothing was written yet, send a user-visible error as text
+      reply.raw.write(
+        `I encountered an error processing your request. Please try again. (${errMsg.slice(0, 200)})`
+      );
     }
 
     reply.raw.end();
