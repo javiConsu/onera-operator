@@ -3,12 +3,13 @@ import { streamChatAgent } from "@onera/agents";
 import { buildProjectContext } from "../services/project.service.js";
 import { prisma } from "@onera/database";
 import { INTERNAL_SECRET } from "../middleware/auth.js";
-import type { ModelMessage } from "ai";
+import { convertToModelMessages, type ModelMessage } from "ai";
 
 export async function chatRoutes(app: FastifyInstance) {
   app.post<{
     Body: {
-      messages: Array<{ role: string; content: string }>;
+      // AI SDK v6 useChat sends UIMessage[] (with .parts), not { role, content }
+      messages: Array<Record<string, unknown>>;
       projectId?: string;
     };
   }>("/api/chat", async (request, reply) => {
@@ -51,15 +52,31 @@ export async function chatRoutes(app: FastifyInstance) {
       }
     }
 
-    // Stream the chat response
-    // Use internal secret for tool→API calls (JWT expires mid-stream)
-    // Filter to only user/assistant roles — "system" is not a valid ModelMessage role in AI SDK v6
-    const modelMessages: ModelMessage[] = messages
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      }));
+    // AI SDK v6: useChat with TextStreamChatTransport sends UIMessage[] (with .parts arrays).
+    // Convert to ModelMessage[] that streamText() expects.
+    // Also handles legacy { role, content } format for backwards compatibility.
+    let modelMessages: ModelMessage[];
+    try {
+      // Check if messages are UIMessage format (have .parts) or legacy format (have .content string)
+      const isUIFormat = messages.some((m) => Array.isArray(m.parts));
+      if (isUIFormat) {
+        modelMessages = await convertToModelMessages(
+          messages.filter((m) => m.role === "user" || m.role === "assistant") as any
+        );
+      } else {
+        // Legacy format: { role, content: string }
+        modelMessages = messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content as string,
+          }));
+      }
+    } catch (err: any) {
+      console.error("[chat] Failed to convert messages:", err.message || err);
+      return reply.code(400).send({ error: "Invalid message format" });
+    }
+
     const result = streamChatAgent(
       modelMessages,
       projectContext,
