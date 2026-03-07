@@ -47,9 +47,9 @@ function useElapsed(startIso: string | null, active: boolean): string {
 // Main page
 // ---------------------------------------------------------------------------
 export default function LivePage() {
-  const [data, setData] = useState<PublicLiveData | null>(null);
+  const [data, setData] = useState < PublicLiveData | null > (null);
   const [, setTick] = useState(0);
-  const [lastEvent, setLastEvent] = useState<PublicStreamEvent | null>(null);
+  const [lastEvent, setLastEvent] = useState < PublicStreamEvent | null > (null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -89,12 +89,12 @@ export default function LivePage() {
       <header className="shrink-0 border-b-2 border-dashed border-border bg-background/90 backdrop-blur-sm">
         <div className="flex h-12 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <Link href="/home" className="font-serif text-2xl font-extrabold tracking-tight text-primary">
+            <Link href="/home" className="font-serif text-2xl font-extrabold tracking-tight text-primary hover:opacity-80 transition-opacity">
               Onera Operator
             </Link>
-            <span className="inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              Live
+            <span className="inline-flex items-center gap-1.5 border border-[#fa782a]/30 bg-[#fa782a]/10 text-[#ea580c] px-2 py-1 text-[10px] uppercase tracking-wider font-bold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#fa782a] animate-pulse" />
+              Live Feed
             </span>
           </div>
           <Link href="/login">
@@ -141,7 +141,7 @@ export default function LivePage() {
 // Scrolling terminal bar
 // ---------------------------------------------------------------------------
 function TerminalBar({ lines }: { lines: TerminalLine[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef < HTMLDivElement > (null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -153,10 +153,10 @@ function TerminalBar({ lines }: { lines: TerminalLine[] }) {
     lines.length > 0
       ? lines
       : [
-          { text: "Onera Operator online", status: "success", timestamp: new Date().toISOString() },
-          { text: "Agents: planner, twitter, outreach, research, engineer", status: "success", timestamp: new Date().toISOString() },
-          { text: "Waiting for agent activity...", status: "success", timestamp: new Date().toISOString() },
-        ];
+        { text: "Onera Operator online", status: "success", timestamp: new Date().toISOString() },
+        { text: "Agents: planner, twitter, outreach, research, engineer", status: "success", timestamp: new Date().toISOString() },
+        { text: "Waiting for agent activity...", status: "success", timestamp: new Date().toISOString() },
+      ];
 
   return (
     <div
@@ -229,20 +229,18 @@ function OperatorColumn({
                 <div key={agent.name} className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className={`text-[10px] shrink-0 ${
-                        isRunning
-                          ? "text-primary animate-pulse"
-                          : isError
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                      }`}
+                      className={`text-[10px] shrink-0 ${isRunning
+                        ? "text-primary animate-pulse"
+                        : isError
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                        }`}
                     >
                       {isRunning ? "●" : isError ? "✕" : "○"}
                     </span>
                     <span
-                      className={`text-[10px] truncate ${
-                        isRunning ? "text-foreground font-semibold" : "text-muted-foreground"
-                      }`}
+                      className={`text-[10px] truncate ${isRunning ? "text-foreground font-semibold" : "text-muted-foreground"
+                        }`}
                     >
                       {agent.displayName}
                     </span>
@@ -283,8 +281,8 @@ function BusinessColumn({
             <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
               Tasks Completed
             </span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-serif text-2xl font-bold text-foreground">
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="font-serif text-3xl font-bold text-primary">
                 {(stats?.totalTasksCompleted ?? 0).toLocaleString()}
               </span>
               {stats && stats.tasksLast24h > 0 && (
@@ -295,29 +293,29 @@ function BusinessColumn({
             </div>
           </div>
 
-          <div className="border-t border-dashed border-border/50 pt-2">
+          <div className="border-t-2 border-dashed border-border pt-3">
             <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
               Emails Sent
             </span>
-            <div className="font-serif text-2xl font-bold text-foreground">
+            <div className="font-serif text-2xl font-bold text-foreground mt-1">
               {(stats?.emailsSent ?? 0).toLocaleString()}
             </div>
           </div>
 
-          <div className="border-t border-dashed border-border/50 pt-2">
+          <div className="border-t-2 border-dashed border-border pt-3">
             <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
               Tweets Posted
             </span>
-            <div className="font-serif text-2xl font-bold text-foreground">
+            <div className="font-serif text-2xl font-bold text-foreground mt-1">
               {(stats?.tweetsPosted ?? 0).toLocaleString()}
             </div>
           </div>
 
-          <div className="border-t border-dashed border-border/50 pt-2">
+          <div className="border-t-2 border-dashed border-border pt-3">
             <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
               Active Companies
             </span>
-            <div className="font-serif text-2xl font-bold text-foreground">
+            <div className="font-serif text-2xl font-bold text-foreground mt-1">
               {(stats?.activeProjects ?? 0).toLocaleString()}
             </div>
           </div>
@@ -442,25 +440,26 @@ function TasksColumn({
 
 function RunningTaskCard({ task }: { task: PublicTask }) {
   const elapsed = useElapsed(task.updatedAt, true);
-  const catColor = CATEGORY_COLORS[task.category] ?? "text-muted-foreground border-border";
 
   return (
-    <div className="border-2 border-primary/40 bg-primary/5 p-4 space-y-2">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
-        <h4 className="font-bold text-sm leading-tight flex-1">{task.title}</h4>
+    <div className="border-2 border-primary bg-white bp-corners p-4 space-y-3 rounded-none shadow-none group transition-all relative">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+          <h4 className="font-serif font-bold text-lg leading-tight flex-1 text-primary">{task.title}</h4>
+        </div>
       </div>
       {task.description && (
-        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
+        <p className="text-[11px] font-sans text-muted-foreground leading-relaxed line-clamp-3">
           {task.description}
         </p>
       )}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${catColor}`}>
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t-2 border-dashed border-primary/20">
+        <span className="text-[10px] uppercase tracking-widest font-mono font-bold text-primary">
           {task.category}
         </span>
-        <span className="text-[10px] text-primary font-semibold">
-          Running for {elapsed || "0m 00s"}
+        <span className="text-[10px] text-primary/70 font-mono ml-auto">
+          Running {elapsed || "0m 00s"}
         </span>
       </div>
     </div>
@@ -468,26 +467,31 @@ function RunningTaskCard({ task }: { task: PublicTask }) {
 }
 
 function TaskCard({ task }: { task: PublicTask }) {
-  const catColor = CATEGORY_COLORS[task.category] ?? "text-muted-foreground border-border";
   const isFailed = task.status === "FAILED";
 
   return (
-    <div className="border border-dashed border-border p-3 space-y-2">
-      <h4 className="font-semibold text-xs leading-tight">{task.title}</h4>
+    <div className="border-2 border-zinc-200 hover:border-primary bg-white p-3 space-y-2 rounded-none shadow-none group transition-all">
+      <h4 className="font-serif font-bold text-[15px] leading-tight group-hover:text-primary transition-colors">
+        {task.title}
+      </h4>
       {task.description && (
-        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
+        <p className="text-[10px] font-sans text-muted-foreground leading-relaxed line-clamp-2">
           {task.description}
         </p>
       )}
-      <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${catColor}`}>
+      <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex-wrap pt-2 border-t border-dashed border-zinc-200">
+        <span className="font-bold text-zinc-500">
           {task.category}
         </span>
-        <span className={isFailed ? "text-destructive" : ""}>
-          {task.status === "COMPLETED" ? "✓" : "✕"} {task.status.toLowerCase()}
-        </span>
-        {task.agentName && <span>· {task.agentName}</span>}
-        <span className="ml-auto">{formatRelativeTime(task.updatedAt)}</span>
+        <div className="flex items-center gap-1">
+          <span className={isFailed ? "text-destructive font-bold" : "text-green-600 font-bold"}>
+            {task.status === "COMPLETED" ? "✓" : "✕"}
+          </span>
+          <span className={isFailed ? "text-destructive" : ""}>
+            {task.status}
+          </span>
+        </div>
+        <span className="ml-auto opacity-60">{formatRelativeTime(task.updatedAt)}</span>
       </div>
     </div>
   );
@@ -497,11 +501,11 @@ function TaskCard({ task }: { task: PublicTask }) {
 // Shared hook: track newly added items and highlight them for 8s
 // ---------------------------------------------------------------------------
 function useNewItemHighlight(items: { key: string }[]) {
-  const seenKeys = useRef<Set<string>>(new Set());
-  const [newKeys, setNewKeys] = useState<Set<string>>(new Set());
+  const seenKeys = useRef < Set < string >> (new Set());
+  const [newKeys, setNewKeys] = useState < Set < string >> (new Set());
 
   useEffect(() => {
-    const incoming = new Set<string>();
+    const incoming = new Set < string > ();
     for (const item of items) {
       if (!seenKeys.current.has(item.key)) {
         incoming.add(item.key);
@@ -646,11 +650,11 @@ interface ChatMessage {
 }
 
 function AskColumn() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState < ChatMessage[] > ([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState < string | null > (null);
+  const chatEndRef = useRef < HTMLDivElement > (null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [credits, setCredits] = useState<number | null>(null);
+  const [projects, setProjects] = useState < Project[] > ([]);
+  const [selectedProject, setSelectedProject] = useState < Project | null > (null);
+  const [credits, setCredits] = useState < number | null > (null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const router = useRouter();
@@ -77,16 +77,21 @@ export default function DashboardPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-6">
-        <div className="border-[1.5px] border-dashed border-border p-10 text-center max-w-md relative bp-corners">
-          <h2 className="text-2xl font-bold text-primary mb-2">
-            Welcome to Onera Operator
+      <div className="flex h-full flex-col items-center justify-center gap-6 bg-blueprint p-6">
+        <div className="border-2 border-dashed border-primary/40 bg-white p-12 text-center max-w-lg relative corner-marks shadow-none">
+          <h2 className="text-3xl font-serif font-extrabold text-primary mb-3">
+            Welcome to Onera
           </h2>
-          <p className="text-xs text-muted-foreground mb-6">
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground mb-8">
             Create your first company to get started. The AI will automatically
             research your product and begin planning tasks.
           </p>
-          <Button onClick={() => router.push("/new")}>+ Create Company</Button>
+          <Button
+            onClick={() => router.push("/new")}
+            className="rounded-sm h-[48px] px-8 shadow-sm bg-primary border-2 border-primary text-primary-foreground hover:bg-primary/90 font-sans font-bold text-[15px]"
+          >
+            + Create Company
+          </Button>
         </div>
       </div>
     );
@@ -102,22 +107,21 @@ export default function DashboardPage() {
           </span>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
             {projects.map((p) => (
-                <Button
-                  key={p.id}
-                  onClick={() => setSelectedProject(p)}
-                  size="sm"
-                  variant={selectedProject?.id === p.id ? "default" : "outline"}
-                  className={`shrink-0 ${
-                    selectedProject?.id === p.id
-                      ? ""
-                      : "border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary"
-                }`}
-                >
-                  {p.name}
-                </Button>
-              ))}
-            </div>
+              <Button
+                key={p.id}
+                onClick={() => setSelectedProject(p)}
+                size="sm"
+                variant={selectedProject?.id === p.id ? "default" : "outline"}
+                className={`shrink-0 ${selectedProject?.id === p.id
+                    ? ""
+                    : "border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary"
+                  }`}
+              >
+                {p.name}
+              </Button>
+            ))}
           </div>
+        </div>
       )}
 
       {/* 5-column dashboard — collapsible */}
