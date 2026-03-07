@@ -11,6 +11,8 @@ interface AgentEvent {
   taskTitle: string;
   projectId: string;
   message: string;
+  /** Human-readable narrative from GPT-4.1-nano. Falls back to message. */
+  narrative?: string;
   data?: Record<string, unknown>;
   timestamp: string;
 }
@@ -147,6 +149,12 @@ export function LiveFeed({ projectId }: LiveFeedProps) {
 }
 
 function formatEventMessage(event: AgentEvent): string {
+  // Prefer the GPT-4.1-nano narrative if available
+  if (event.narrative && event.narrative !== event.message) {
+    return event.narrative;
+  }
+
+  // Fallback: raw formatting
   switch (event.type) {
     case "started":
       return `${event.agentName}: ${event.taskTitle}`;

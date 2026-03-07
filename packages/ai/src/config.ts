@@ -40,6 +40,27 @@ export function loadAIConfig(): AIConfig {
 }
 
 /**
+ * Load the nano (ultra-cheap) AI config from environment variables.
+ * Used for lightweight tasks: narrative rewrites, summaries, classifications.
+ *
+ * Falls back to the primary config if AI_NANO_MODEL is not set.
+ */
+export function loadNanoAIConfig(): AIConfig | null {
+  const nanoModel = process.env.AI_NANO_MODEL;
+  if (!nanoModel) return null;
+
+  const primary = loadAIConfig();
+  return {
+    provider: (process.env.AI_NANO_PROVIDER || primary.provider) as AIProviderType,
+    model: nanoModel,
+    apiKey: process.env.AI_NANO_API_KEY || primary.apiKey,
+    baseURL: process.env.AI_NANO_BASE_URL || primary.baseURL,
+    azureResourceName: primary.azureResourceName,
+    azureDeploymentName: process.env.AI_NANO_AZURE_DEPLOYMENT_NAME || nanoModel,
+  };
+}
+
+/**
  * Load the premium (frontier) AI config from environment variables.
  * Used for quality-critical agents: chat, outreach, research, engineer.
  *

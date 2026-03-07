@@ -1,4 +1,5 @@
 import IORedis from "ioredis";
+import { rewriteNarrative } from "./narrative.service.js";
 
 // ─── Agent Activity Events ──────────────────────────────────────
 // Published to Redis pub/sub for real-time streaming to the frontend.
@@ -10,6 +11,8 @@ export interface AgentEvent {
   taskTitle: string;
   projectId: string;
   message: string;
+  /** Human-readable narrative, rewritten by GPT-4.1-nano. Falls back to message. */
+  narrative?: string;
   data?: unknown;
   timestamp: string;
 }
@@ -41,19 +44,39 @@ function getPublisher(): IORedis | null {
   return publisher;
 }
 
-/** Publish an agent activity event to Redis pub/sub */
-export function publishAgentEvent(event: Omit<AgentEvent, "timestamp">) {
+/**
+ * Publish an agent activity event to Redis pub/sub.
+ *
+ * The narrative rewrite happens ONCE here before publishing, so all
+ * SSE clients (authenticated + public) receive the pre-rewritten text.
+ * If the rewrite fails or takes too long, the raw message is used.
+ */
+export function publishAgentEvent(event: Omit<AgentEvent, "timestamp" | "narrative">) {
   const pub = getPublisher();
   if (!pub) return;
 
-  const fullEvent: AgentEvent = {
-    ...event,
-    timestamp: new Date().toISOString(),
-  };
+  const timestamp = new Date().toISOString();
 
-  pub.publish(CHANNEL, JSON.stringify(fullEvent)).catch((err) => {
-    console.warn("[activity] Redis publish failed:", err.message || err);
-  });
+  // Fire the narrative rewrite, then publish. Don't await at the call site —
+  // this is already non-blocking (publishAgentEvent returns void).
+  rewriteNarrative(event.type, event.agentName, event.taskTitle, event.message)
+    .then((narrative) => {
+      const fullEvent: AgentEvent = {
+        ...event,
+        narrative,
+        timestamp,
+      };
+      return pub.publish(CHANNEL, JSON.stringify(fullEvent));
+    })
+    .catch((err) => {
+      // If narrative rewrite fails, publish without it
+      console.warn("[activity] Narrative rewrite or Redis publish failed:", err.message || err);
+      const fullEvent: AgentEvent = {
+        ...event,
+        timestamp,
+      };
+      pub.publish(CHANNEL, JSON.stringify(fullEvent)).catch(() => {});
+    });
 }
 
 /** Create a Redis subscriber for agent activity events */

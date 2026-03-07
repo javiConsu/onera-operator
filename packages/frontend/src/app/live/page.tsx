@@ -274,11 +274,6 @@ function BusinessColumn({
   stats?: PublicLiveData["stats"];
   companies: PublicCompany[];
 }) {
-  // Estimate LLM cost based on credits consumed
-  // Real cost per credit from Azure metrics: ~$0.066
-  const costPerCredit = 0.066;
-  const estimatedLLMCost = (stats?.creditsConsumed ?? 0) * costPerCredit;
-
   return (
     <div className="space-y-5">
       {/* Business metrics — Polsia-style */}
@@ -327,19 +322,7 @@ function BusinessColumn({
             </div>
           </div>
 
-          <div className="border-t border-dashed border-border/50 pt-2">
-            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
-              Credits Consumed
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-serif text-2xl font-bold text-foreground">
-                {(stats?.creditsConsumed ?? 0).toLocaleString()}
-              </span>
-              <span className="text-[10px] text-muted-foreground font-mono">
-                ~${estimatedLLMCost.toFixed(2)} LLM cost
-              </span>
-            </div>
-          </div>
+
         </div>
       </CollapsibleSection>
 
@@ -384,27 +367,7 @@ function BusinessColumn({
         )}
       </CollapsibleSection>
 
-      <div className="border-t border-dashed border-border" />
 
-      {/* LLM Usage breakdown */}
-      <CollapsibleSection title="LLM Usage">
-        <div className="space-y-2">
-          {[
-            { model: "GPT-5.4", role: "Premium", desc: "Chat, Outreach, Research, Engineer" },
-            { model: "Kimi K2.5", role: "Default", desc: "Planner, Twitter, Reports" },
-          ].map(({ model, role, desc }) => (
-            <div key={model} className="border border-dashed border-border/50 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold">{model}</span>
-                <span className="text-[9px] font-mono uppercase tracking-widest text-primary">
-                  {role}
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
     </div>
   );
 }

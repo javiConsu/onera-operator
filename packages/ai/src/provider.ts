@@ -3,12 +3,14 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createAzure } from "@ai-sdk/azure";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModel } from "ai";
-import { loadAIConfig, loadPremiumAIConfig, type AIConfig } from "./config.js";
+import { loadAIConfig, loadPremiumAIConfig, loadNanoAIConfig, type AIConfig } from "./config.js";
 
 let cachedModel: LanguageModel | null = null;
 let cachedConfig: AIConfig | null = null;
 let cachedPremiumModel: LanguageModel | null = null;
 let cachedPremiumConfig: AIConfig | null = null;
+let cachedNanoModel: LanguageModel | null = null;
+let cachedNanoConfig: AIConfig | null = null;
 
 /**
  * Creates a language model instance based on the configured provider.
@@ -69,6 +71,34 @@ export function getPremiumModel(): LanguageModel {
   cachedPremiumConfig = premiumConfig;
   cachedPremiumModel = createModelForProvider(premiumConfig);
   return cachedPremiumModel;
+}
+
+/**
+ * Returns the nano (ultra-cheap) model for lightweight tasks like narrative rewrites.
+ * Falls back to the default model if AI_NANO_MODEL is not configured.
+ */
+export function getNanoModel(): LanguageModel {
+  const nanoConfig = loadNanoAIConfig();
+  if (!nanoConfig) {
+    return getModel();
+  }
+
+  if (
+    cachedNanoModel &&
+    cachedNanoConfig &&
+    cachedNanoConfig.provider === nanoConfig.provider &&
+    cachedNanoConfig.model === nanoConfig.model &&
+    cachedNanoConfig.apiKey === nanoConfig.apiKey
+  ) {
+    return cachedNanoModel;
+  }
+
+  console.log(
+    `[onera-ai] Nano model: provider=${nanoConfig.provider} model=${nanoConfig.model} deployment=${nanoConfig.azureDeploymentName || "n/a"}`
+  );
+  cachedNanoConfig = nanoConfig;
+  cachedNanoModel = createModelForProvider(nanoConfig);
+  return cachedNanoModel;
 }
 
 function createModelForProvider(config: AIConfig): LanguageModel {
@@ -212,6 +242,8 @@ export function resetModel(): void {
   cachedConfig = null;
   cachedPremiumModel = null;
   cachedPremiumConfig = null;
+  cachedNanoModel = null;
+  cachedNanoConfig = null;
   for (const key of Object.keys(agentModelCache)) {
     delete agentModelCache[key];
   }

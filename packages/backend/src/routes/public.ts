@@ -41,6 +41,7 @@ export async function publicRoutes(app: FastifyInstance) {
         agentName: event.agentName,
         taskTitle: event.taskTitle,
         message: event.message,
+        narrative: event.narrative || event.message,
         timestamp: event.timestamp,
       };
       reply.raw.write(`data: ${JSON.stringify(publicEvent)}\n\n`);

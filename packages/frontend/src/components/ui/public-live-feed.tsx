@@ -11,6 +11,8 @@ export interface PublicStreamEvent {
   agentName: string;
   taskTitle: string;
   message: string;
+  /** Human-readable narrative from GPT-4.1-nano. Falls back to message. */
+  narrative?: string;
   timestamp: string;
 }
 
@@ -49,6 +51,12 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 function formatEventLine(event: PublicStreamEvent): string {
+  // Prefer the GPT-4.1-nano narrative if available
+  if (event.narrative && event.narrative !== event.message) {
+    return event.narrative;
+  }
+
+  // Fallback: raw formatting
   switch (event.type) {
     case "started":
       return `${event.agentName} started: ${event.taskTitle}`;
