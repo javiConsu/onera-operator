@@ -327,7 +327,7 @@ git commit -m "fix: report panel correctly displays task titles from JSON object
 
 ### Task 5: Fix Docker Compose Environment Variables
 
-**Problem:** `docker-compose.yml` frontend service is missing Clerk env vars and EXA_API_KEY. Production deployments via Docker will have broken auth and no web search.
+**Problem:** `docker-compose.yml` frontend service is missing Clerk env vars. Production deployments via Docker will have broken auth.
 
 **Files:**
 - Modify: `docker-compose.yml`
@@ -351,11 +351,6 @@ Replace the frontend service environment section:
       NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /new
     ports:
       - "3000:3000"
-```
-
-And add `EXA_API_KEY` to the backend service:
-```yaml
-      EXA_API_KEY: ${EXA_API_KEY:-}
 ```
 
 **Step 2: Commit**

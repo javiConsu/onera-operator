@@ -31,6 +31,9 @@ export function getModel(configOverride?: Partial<AIConfig>): LanguageModel {
     return cachedModel;
   }
 
+  console.log(
+    `[onera-ai] Default model: provider=${config.provider} model=${config.model} deployment=${config.azureDeploymentName || "n/a"}`
+  );
   cachedConfig = config;
   cachedModel = createModelForProvider(config);
   return cachedModel;
@@ -42,7 +45,13 @@ export function getModel(configOverride?: Partial<AIConfig>): LanguageModel {
  */
 export function getPremiumModel(): LanguageModel {
   const premiumConfig = loadPremiumAIConfig();
-  if (!premiumConfig) return getModel();
+  if (!premiumConfig) {
+    console.warn(
+      "[onera-ai] AI_PREMIUM_MODEL is not set — premium agents will fall back to the default model. " +
+        "Set AI_PREMIUM_MODEL=gpt-5.4 to enable the premium tier."
+    );
+    return getModel();
+  }
 
   if (
     cachedPremiumModel &&
@@ -54,12 +63,20 @@ export function getPremiumModel(): LanguageModel {
     return cachedPremiumModel;
   }
 
+  console.log(
+    `[onera-ai] Premium model: provider=${premiumConfig.provider} model=${premiumConfig.model} deployment=${premiumConfig.azureDeploymentName || "n/a"}`
+  );
   cachedPremiumConfig = premiumConfig;
   cachedPremiumModel = createModelForProvider(premiumConfig);
   return cachedPremiumModel;
 }
 
 function createModelForProvider(config: AIConfig): LanguageModel {
+  console.log(
+    `[onera-ai] Creating ${config.provider} model: model=${config.model}` +
+      (config.azureDeploymentName ? ` deployment=${config.azureDeploymentName}` : "") +
+      (config.baseURL ? ` baseURL=${config.baseURL.replace(/\/+$/, "").slice(0, 60)}` : "")
+  );
   switch (config.provider) {
     case "openai": {
       const openai = createOpenAI({
@@ -176,9 +193,12 @@ export function getModelForAgent(agentName: string): LanguageModel {
     return agentModelCache[agentName];
   }
 
-  const model = PREMIUM_AGENTS.has(agentName)
-    ? getPremiumModel()
-    : getModel();
+  const isPremium = PREMIUM_AGENTS.has(agentName);
+  const model = isPremium ? getPremiumModel() : getModel();
+
+  console.log(
+    `[onera-ai] Agent "${agentName}" → ${isPremium ? "premium" : "default"} tier`
+  );
 
   agentModelCache[agentName] = model;
   return model;

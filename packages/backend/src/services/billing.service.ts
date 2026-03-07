@@ -39,14 +39,17 @@ export const CREDIT_PACKS = [
 export const MAX_TWEETS_PER_DAY_PER_PROJECT = 3;
 
 // Credit costs per action type
+// Pricing reflects actual LLM cost per agent tier:
+//   Premium agents (GPT-5.4): multi-step tool use, 6+ LLM calls/task → expensive
+//   Default agents (Kimi K2.5): simple tasks, 1-3 LLM calls/task → cheap
 export const ACTION_CREDITS: Record<string, number> = {
-  twitter: 3,    // Post tweet
-  outreach: 5,   // Send outreach email
-  research: 5,   // Research task
-  engineer: 5,   // Engineering task
-  planner: 1,    // Plan tasks (auto)
-  report: 0,     // Daily report — free
-  chat: 0,       // Chat message — free
+  twitter: 3,     // Post tweet (Kimi K2.5, short-form)
+  outreach: 8,    // Send outreach email (GPT-5.4, lead finding + email writing)
+  research: 8,    // Research task (GPT-5.4, web search + synthesis)
+  engineer: 10,   // Engineering task (GPT-5.4, code gen + multi-step tool use)
+  planner: 1,     // Plan tasks (Kimi K2.5, structured output)
+  report: 0,      // Daily report — free
+  chat: 0,        // Chat message — free
 };
 
 // ─── Activate Subscription (give 50 trial credits) ──────────────

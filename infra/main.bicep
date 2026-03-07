@@ -66,9 +66,6 @@ param aiPremiumBaseUrl string = ''
 param aiPremiumAzureDeploymentName string = ''
 
 @secure()
-param exaApiKey string = ''
-
-@secure()
 param clerkPublishableKey string
 
 @secure()
@@ -163,7 +160,6 @@ resource backend 'Microsoft.Web/sites@2023-01-01' = {
         { name: 'AI_PREMIUM_API_KEY',                value: aiPremiumApiKey }
         { name: 'AI_PREMIUM_BASE_URL',               value: aiPremiumBaseUrl }
         { name: 'AI_PREMIUM_AZURE_DEPLOYMENT_NAME',  value: aiPremiumAzureDeploymentName }
-        { name: 'EXA_API_KEY',                       value: exaApiKey }
         { name: 'FRONTEND_URL',                      value: frontendUrl }
         { name: 'CLERK_SECRET_KEY',                  value: clerkSecretKey }
         { name: 'DODO_PAYMENTS_API_KEY',             value: dodoPaymentsApiKey }

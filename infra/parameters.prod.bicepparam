@@ -23,12 +23,16 @@ param pgAdminLogin = 'oneraadmin'
 // pgAdminPassword — pass via CLI, don't store here
 
 // AI Configuration
-param aiProvider = 'openai'
-param aiModel = 'gpt-4o'
-param aiBaseUrl = ''
+param aiProvider = 'azure'
+param aiModel = 'Kimi-K2.5'
+param aiBaseUrl = 'https://spapi-m6bybx3p-eastus2.openai.azure.com/'
 param aiAzureResourceName = ''
 param aiAzureDeploymentName = ''
 // aiApiKey — pass via CLI, don't store here
+
+// Premium (frontier) model for quality-critical agents
+param aiPremiumModel = 'gpt-5.4'
+param aiPremiumAzureDeploymentName = 'gpt-5.4'
 
 // Clerk — pass via CLI, don't store here
 // clerkPublishableKey

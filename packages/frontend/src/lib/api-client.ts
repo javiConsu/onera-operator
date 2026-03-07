@@ -365,18 +365,27 @@ export interface TerminalLine {
   timestamp: string;
 }
 
+export interface PublicCompany {
+  name: string;
+  slug: string;
+  taskCount: number;
+  lastActive: string;
+}
+
 export interface PublicLiveData {
   agents: PublicAgentStatus[];
   tasks: PublicTask[];
   tweets: PublicTweet[];
   emails: PublicEmail[];
   terminalLines: TerminalLine[];
+  companies: PublicCompany[];
   stats: {
     totalTasksCompleted: number;
     tasksLast24h: number;
     emailsSent: number;
     tweetsPosted: number;
     activeProjects: number;
+    creditsConsumed: number;
   };
   hasRealData: boolean;
 }

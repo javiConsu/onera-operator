@@ -53,7 +53,9 @@ export async function getPublicLiveData() {
 }
 
 async function _getPublicLiveDataUncached() {
-  const [agents, recentTasks, recentLogs, stats] = await Promise.all([
+  const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const [agents, recentTasks, recentLogs, stats, companies, emailLogs, creditTxns] = await Promise.all([
     prisma.agentStatus.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -108,13 +110,63 @@ async function _getPublicLiveDataUncached() {
       prisma.task.count({
         where: {
           status: TaskStatus.COMPLETED,
-          completedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          completedAt: { gte: now24h },
         },
       }),
     ]),
+
+    // Companies — all projects with their task counts and last activity
+    prisma.project.findMany({
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        updatedAt: true,
+        _count: { select: { tasks: true } },
+      },
+    }),
+
+    // Email logs for email count and recent emails
+    prisma.emailLog.findMany({
+      where: { status: "SENT" },
+      orderBy: { sentAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        subject: true,
+        toEmail: true,
+        sentAt: true,
+        projectId: true,
+      },
+    }),
+
+    // Credit transactions for business metrics
+    prisma.creditTransaction.findMany({
+      where: { type: "TASK_DEDUCTION" },
+      select: { amount: true },
+    }),
   ]);
 
   const [totalTasks, emailTasks, tweetTasks, totalProjects, tasksLast24h] = stats;
+
+  // ── Business metrics ────────────────────────────────────────────
+  const totalCreditsConsumed = creditTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const totalEmailsSent = await prisma.emailLog.count({ where: { status: "SENT" } });
+
+  // ── Companies list (redacted) ───────────────────────────────────
+  const safeCompanies = companies.map((c) => ({
+    name: c.name,
+    slug: projectSlug(c.id),
+    taskCount: c._count.tasks,
+    lastActive: c.updatedAt.toISOString(),
+  }));
+
+  // ── Recent outreach emails (from EmailLog, not task results) ────
+  const recentOutreachEmails = emailLogs.map((e) => ({
+    subject: redactText(e.subject || "Outreach email"),
+    to: redactText(e.toEmail || "unknown"),
+    sentAt: e.sentAt.toISOString(),
+  }));
 
   // Extract tweets and emails from completed task results
   const tweets: { text: string; postedAt: string }[] = [];
@@ -169,18 +221,23 @@ async function _getPublicLiveDataUncached() {
     timestamp: log.createdAt.toISOString(),
   }));
 
+  // Use EmailLog emails if available, otherwise fall back to task-extracted emails
+  const finalEmails = recentOutreachEmails.length > 0 ? recentOutreachEmails : emails;
+
   return {
     agents,
     tasks: safeTasks,
     tweets: tweets.slice(0, 5),
-    emails: emails.slice(0, 5),
+    emails: finalEmails.slice(0, 10),
     terminalLines,
+    companies: safeCompanies,
     stats: {
       totalTasksCompleted: totalTasks,
       tasksLast24h,
-      emailsSent: emailTasks,
+      emailsSent: totalEmailsSent || emailTasks,
       tweetsPosted: tweetTasks,
       activeProjects: totalProjects,
+      creditsConsumed: totalCreditsConsumed,
     },
     hasRealData: recentTasks.length > 0,
   };

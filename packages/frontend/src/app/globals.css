@@ -176,22 +176,30 @@
   z-index: 0;
 }
 
-/* Email item appear + highlight animation */
-@keyframes email-appear {
+/* New-item appear + highlight animation — used for tweets, emails, etc.
+   Slides in, holds a visible blue tint for ~5s so users can read, then fades. */
+@keyframes item-appear {
   0% {
     opacity: 0;
     transform: translateY(-6px);
     background-color: hsl(226 100% 40% / 0.12);
   }
-  30% {
+  10% {
     opacity: 1;
     transform: translateY(0);
-    background-color: hsl(226 100% 40% / 0.12);
+    background-color: hsl(226 100% 40% / 0.10);
+  }
+  70% {
+    background-color: hsl(226 100% 40% / 0.07);
   }
   100% {
     background-color: transparent;
   }
 }
+.animate-item-appear {
+  animation: item-appear 8s ease-out forwards;
+}
+/* Keep old class name working */
 .animate-email-appear {
-  animation: email-appear 1.8s ease-out forwards;
+  animation: item-appear 8s ease-out forwards;
 }

@@ -133,7 +133,6 @@ Go to your repo **Settings > Secrets and variables > Actions** and add:
 | `AI_BASE_URL` | Custom AI endpoint | (empty) |
 | `AI_AZURE_RESOURCE_NAME` | Azure OpenAI resource | (empty) |
 | `AI_AZURE_DEPLOYMENT_NAME` | Azure OpenAI deployment | (empty) |
-| `EXA_API_KEY` | Exa web search API key | (empty) |
 
 ## Step 6: Build and Push Initial Images
 

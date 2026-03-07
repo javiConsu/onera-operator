@@ -10,6 +10,7 @@ import {
   type PublicTask,
   type PublicTweet,
   type PublicEmail,
+  type PublicCompany,
   type TerminalLine,
 } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
@@ -102,7 +103,7 @@ export default function LivePage() {
         </div>
       </header>
 
-      {/* ── 4-column dashboard — collapsible ────────────────────── */}
+      {/* ── 5-column dashboard — collapsible ────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         <CollapsibleColumn title="Operator" className="p-5 space-y-6">
           <OperatorColumn
@@ -110,6 +111,10 @@ export default function LivePage() {
             mood={operatorMood}
             onStreamEvent={handleStreamEvent}
           />
+        </CollapsibleColumn>
+
+        <CollapsibleColumn title="Business" className="p-5 space-y-5">
+          <BusinessColumn stats={data?.stats} companies={data?.companies ?? []} />
         </CollapsibleColumn>
 
         <CollapsibleColumn title="Tasks" className="p-5">
@@ -181,7 +186,6 @@ function OperatorColumn({
   onStreamEvent: (event: PublicStreamEvent) => void;
 }) {
   const running = data?.agents.filter((a) => a.status === "running").length ?? 0;
-  const stats = data?.stats;
 
   return (
     <>
@@ -203,26 +207,6 @@ function OperatorColumn({
           maxLines={60}
           onEvent={onStreamEvent}
         />
-      </CollapsibleSection>
-
-      {/* Business stats */}
-      <CollapsibleSection title="Business">
-        <div className="space-y-2">
-          {[
-            ["Tasks Completed", stats?.totalTasksCompleted ?? 0],
-            ["Last 24h", stats?.tasksLast24h ?? 0],
-            ["Emails Sent", stats?.emailsSent ?? 0],
-            ["Tweets Posted", stats?.tweetsPosted ?? 0],
-            ["Active Projects", stats?.activeProjects ?? 0],
-          ].map(([label, value]) => (
-            <div key={label as string} className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{label as string}</span>
-              <span className="font-bold text-primary tabular-nums">
-                {(value as number).toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
       </CollapsibleSection>
 
       {/* Agent roster */}
@@ -281,7 +265,152 @@ function OperatorColumn({
 }
 
 // ---------------------------------------------------------------------------
-// Col 2 — Tasks
+// Col 2 — Business + Companies
+// ---------------------------------------------------------------------------
+function BusinessColumn({
+  stats,
+  companies,
+}: {
+  stats?: PublicLiveData["stats"];
+  companies: PublicCompany[];
+}) {
+  // Estimate LLM cost based on credits consumed
+  // Real cost per credit from Azure metrics: ~$0.066
+  const costPerCredit = 0.066;
+  const estimatedLLMCost = (stats?.creditsConsumed ?? 0) * costPerCredit;
+
+  return (
+    <div className="space-y-5">
+      {/* Business metrics — Polsia-style */}
+      <CollapsibleSection title="Business">
+        <div className="space-y-3">
+          <div>
+            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
+              Tasks Completed
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-serif text-2xl font-bold text-foreground">
+                {(stats?.totalTasksCompleted ?? 0).toLocaleString()}
+              </span>
+              {stats && stats.tasksLast24h > 0 && (
+                <span className="text-[10px] text-primary font-mono">
+                  +{stats.tasksLast24h} last 24h
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-dashed border-border/50 pt-2">
+            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
+              Emails Sent
+            </span>
+            <div className="font-serif text-2xl font-bold text-foreground">
+              {(stats?.emailsSent ?? 0).toLocaleString()}
+            </div>
+          </div>
+
+          <div className="border-t border-dashed border-border/50 pt-2">
+            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
+              Tweets Posted
+            </span>
+            <div className="font-serif text-2xl font-bold text-foreground">
+              {(stats?.tweetsPosted ?? 0).toLocaleString()}
+            </div>
+          </div>
+
+          <div className="border-t border-dashed border-border/50 pt-2">
+            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
+              Active Companies
+            </span>
+            <div className="font-serif text-2xl font-bold text-foreground">
+              {(stats?.activeProjects ?? 0).toLocaleString()}
+            </div>
+          </div>
+
+          <div className="border-t border-dashed border-border/50 pt-2">
+            <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
+              Credits Consumed
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-serif text-2xl font-bold text-foreground">
+                {(stats?.creditsConsumed ?? 0).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                ~${estimatedLLMCost.toFixed(2)} LLM cost
+              </span>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <div className="border-t border-dashed border-border" />
+
+      {/* Companies list — Polsia-style */}
+      <CollapsibleSection
+        title="Companies"
+        badge={
+          companies.length > 0 ? (
+            <span className="text-[10px] text-muted-foreground">{companies.length}</span>
+          ) : undefined
+        }
+      >
+        {companies.length > 0 ? (
+          <div className="space-y-0">
+            {companies.map((company) => (
+              <div
+                key={company.slug}
+                className="flex items-center justify-between py-2.5 border-b border-dashed border-border/50 last:border-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="font-serif text-sm font-semibold truncate">
+                    {company.name}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground font-mono">
+                    {company.taskCount} tasks
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0 ml-3">
+                  {formatRelativeTime(company.lastActive)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border border-dashed border-border p-6 text-center">
+            <p className="text-xs text-muted-foreground">
+              No companies onboarded yet.
+            </p>
+          </div>
+        )}
+      </CollapsibleSection>
+
+      <div className="border-t border-dashed border-border" />
+
+      {/* LLM Usage breakdown */}
+      <CollapsibleSection title="LLM Usage">
+        <div className="space-y-2">
+          {[
+            { model: "GPT-5.4", role: "Premium", desc: "Chat, Outreach, Research, Engineer" },
+            { model: "Kimi K2.5", role: "Default", desc: "Planner, Twitter, Reports" },
+          ].map(({ model, role, desc }) => (
+            <div key={model} className="border border-dashed border-border/50 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold">{model}</span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-primary">
+                  {role}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </CollapsibleSection>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Col 3 — Tasks
 // ---------------------------------------------------------------------------
 const CATEGORY_COLORS: Record<string, string> = {
   TWITTER: "text-sky-600 border-sky-500/30 bg-sky-500/5",
@@ -402,7 +531,39 @@ function TaskCard({ task }: { task: PublicTask }) {
 }
 
 // ---------------------------------------------------------------------------
-// Col 3 — Twitter + Email
+// Shared hook: track newly added items and highlight them for 8s
+// ---------------------------------------------------------------------------
+function useNewItemHighlight(items: { key: string }[]) {
+  const seenKeys = useRef<Set<string>>(new Set());
+  const [newKeys, setNewKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const incoming = new Set<string>();
+    for (const item of items) {
+      if (!seenKeys.current.has(item.key)) {
+        incoming.add(item.key);
+        seenKeys.current.add(item.key);
+      }
+    }
+    if (incoming.size > 0) {
+      setNewKeys((prev) => new Set([...prev, ...incoming]));
+      // Clear highlight after animation completes (8s)
+      const timer = setTimeout(() => {
+        setNewKeys((prev) => {
+          const next = new Set(prev);
+          for (const k of incoming) next.delete(k);
+          return next;
+        });
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [items]);
+
+  return newKeys;
+}
+
+// ---------------------------------------------------------------------------
+// Col 4 — Twitter + Email
 // ---------------------------------------------------------------------------
 function SocialColumn({
   tweets,
@@ -413,36 +574,15 @@ function SocialColumn({
   emails: PublicEmail[];
   stats?: PublicLiveData["stats"];
 }) {
-  // Track which email IDs have already been seen to animate newly added ones
-  const seenEmailIds = useRef<Set<string>>(new Set());
-  const [newEmailIds, setNewEmailIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const incoming = new Set<string>();
-    for (const email of emails) {
-      const id = email.sentAt; // use sentAt as stable key (no explicit id on PublicEmail)
-      if (!seenEmailIds.current.has(id)) {
-        incoming.add(id);
-        seenEmailIds.current.add(id);
-      }
-    }
-    if (incoming.size > 0) {
-      setNewEmailIds((prev) => new Set([...prev, ...incoming]));
-      // Clear highlight after animation completes (1.8s)
-      const timer = setTimeout(() => {
-        setNewEmailIds((prev) => {
-          const next = new Set(prev);
-          for (const id of incoming) next.delete(id);
-          return next;
-        });
-      }, 1800);
-      return () => clearTimeout(timer);
-    }
-  }, [emails]);
+  // Track new tweets and emails for highlight animation
+  const tweetItems = tweets.map((t, i) => ({ key: `${t.postedAt}-${i}` }));
+  const emailItems = emails.map((e) => ({ key: e.sentAt }));
+  const newTweetKeys = useNewItemHighlight(tweetItems);
+  const newEmailKeys = useNewItemHighlight(emailItems);
 
   return (
     <div className="space-y-5">
-      {/* Twitter */}
+      {/* Twitter — compact inline list */}
       <CollapsibleSection
         title="Twitter"
         badge={
@@ -452,15 +592,22 @@ function SocialColumn({
         }
       >
         {tweets.length > 0 ? (
-          <div className="space-y-2">
-            {tweets.map((tweet, i) => (
-              <div key={i} className="border border-dashed border-border p-3 space-y-2">
-                <p className="text-xs leading-relaxed">{tweet.text}</p>
-                <span className="text-[10px] text-muted-foreground">
-                  {formatRelativeTime(tweet.postedAt)}
-                </span>
-              </div>
-            ))}
+          <div className="space-y-0">
+            {tweets.map((tweet, i) => {
+              const tweetKey = `${tweet.postedAt}-${i}`;
+              const isNew = newTweetKeys.has(tweetKey);
+              return (
+                <div
+                  key={i}
+                  className={`py-2 border-b border-dashed border-border/50 last:border-0 ${isNew ? "animate-item-appear" : ""}`}
+                >
+                  <p className="text-[11px] leading-snug line-clamp-2">{tweet.text}</p>
+                  <span className="text-[9px] text-muted-foreground/60 mt-0.5 block">
+                    {formatRelativeTime(tweet.postedAt)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="border border-dashed border-border p-4 text-center">
@@ -470,8 +617,8 @@ function SocialColumn({
           </div>
         )}
 
-        {stats && (
-          <div className="text-[10px] text-muted-foreground">
+        {stats && stats.tweetsPosted > 0 && (
+          <div className="text-[10px] text-muted-foreground pt-1">
             + {stats.tweetsPosted.toLocaleString()} tweets posted all-time
           </div>
         )}
@@ -479,7 +626,7 @@ function SocialColumn({
 
       <div className="border-t border-dashed border-border" />
 
-      {/* Email */}
+      {/* Email — compact row list */}
       <CollapsibleSection
         title="Email"
         badge={
@@ -491,19 +638,18 @@ function SocialColumn({
         {emails.length > 0 ? (
           <div className="space-y-0">
             {emails.map((email, i) => {
-              const emailKey = email.sentAt;
-              const isNew = newEmailIds.has(emailKey);
+              const isNew = newEmailKeys.has(email.sentAt);
               return (
                 <div
                   key={i}
-                  className={`flex items-start gap-2 text-xs py-2.5 border-b border-dashed border-border/50 last:border-0 rounded-sm ${isNew ? "animate-email-appear" : ""}`}
+                  className={`flex items-start gap-2 text-xs py-2 border-b border-dashed border-border/50 last:border-0 ${isNew ? "animate-item-appear" : ""}`}
                 >
                   <span className="text-primary font-bold shrink-0 mt-0.5">&rarr;</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">{email.subject}</p>
+                    <p className="text-[11px] font-semibold truncate">{email.subject}</p>
                     <p className="text-[10px] text-muted-foreground truncate">To: {email.to}</p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
+                  <span className="text-[9px] text-muted-foreground/60 shrink-0">
                     {formatRelativeTime(email.sentAt)}
                   </span>
                 </div>
@@ -518,8 +664,8 @@ function SocialColumn({
           </div>
         )}
 
-        {stats && (
-          <div className="text-[10px] text-muted-foreground">
+        {stats && stats.emailsSent > 0 && (
+          <div className="text-[10px] text-muted-foreground pt-1">
             + {stats.emailsSent.toLocaleString()} emails sent all-time
           </div>
         )}
