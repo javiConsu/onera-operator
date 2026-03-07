@@ -98,20 +98,22 @@ export async function chatRoutes(app: FastifyInstance) {
           case "text-delta":
             reply.raw.write(part.text);
             break;
-          case "error":
-            console.error("[chat] Stream error part:", part.error);
+          case "error": {
+            const errDetail = part.error instanceof Error ? part.error.message : String(part.error);
+            console.error("[chat] Stream error part:", errDetail, part.error);
             reply.raw.write(
-              `I encountered an error. Please try again.`
+              `\n\nSorry, something went wrong while processing your request. (${errDetail.slice(0, 150)})`
             );
             break;
+          }
           // step-start, step-finish, finish, etc — skip silently
         }
       }
     } catch (streamErr) {
       const errMsg = streamErr instanceof Error ? streamErr.message : String(streamErr);
-      console.error("[chat] Stream error:", errMsg);
+      console.error("[chat] Stream error:", errMsg, streamErr);
       reply.raw.write(
-        `I encountered an error processing your request. Please try again. (${errMsg.slice(0, 200)})`
+        `\n\nSorry, something went wrong processing your request. (${errMsg.slice(0, 200)})`
       );
     }
 

@@ -341,11 +341,14 @@ Rules:
 - If nothing is happening, say so honestly. For example: "I'm idle right now, waiting for the next scheduled run."
 - Never reveal private details like real company names, emails, API keys, or internal IDs. The data has been redacted; keep it that way.
 - Be friendly but professional. You're a live system responding to a curious visitor.
+- If someone asks you to DO something (create a task, send an email, set up a sheet, etc.), explain that this chat is read only. To give Onera Operator tasks, they need to sign up and use the dashboard. Point them to the "Get Started" button on this page.
 - If the question is unrelated to Onera Operator or what you're doing, politely redirect: "I can only tell you about what Onera Operator is doing right now."
+- NEVER say "I encountered an error" or apologize for errors. Always give a real answer.
 - NEVER use dashes (--), em-dashes, or en-dashes. Use periods, commas, or colons instead.
 
 ${context}`,
     prompt: question,
+    maxOutputTokens: 300,
   });
 
   return text.trim();
