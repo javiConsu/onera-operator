@@ -42,7 +42,7 @@ export const webSearch = tool({
       ])
       .describe("Category to focus the search on. Use 'none' for general search."),
   }),
-  execute: async ({ query, maxResults, category: rawCategory }) => {
+  execute: async ({ query, maxResults, category: rawCategory }: { query: string; maxResults: number; category: "company" | "research paper" | "news" | "tweet" | "personal site" | "financial report" | "people" | "none" }) => {
     const category = rawCategory === "none" ? undefined : rawCategory;
 
     // Enhance query with category context for better results
