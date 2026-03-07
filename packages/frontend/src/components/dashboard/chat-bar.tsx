@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
+import { TextStreamChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, parseChatStream } from "@/lib/utils";
@@ -11,21 +12,23 @@ interface ChatBarProps {
 }
 
 export function ChatBar({ projectId }: ChatBarProps) {
+  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
     messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
+    sendMessage,
+    status,
     setMessages,
   } = useChat({
-    api: "/api/chat",
-    body: { projectId },
-    streamProtocol: "text",
+    transport: new TextStreamChatTransport({
+      api: "/api/chat",
+      body: { projectId },
+    }),
   });
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   const hasMessages = messages.length > 0;
 
@@ -60,8 +63,12 @@ export function ChatBar({ projectId }: ChatBarProps) {
           <div className="p-4 space-y-3">
             {messages.map((message) => {
               const isAssistant = message.role === "assistant";
-              const parsed = isAssistant ? parseChatStream(message.content) : null;
-              const displayText = parsed ? parsed.text : message.content;
+              const messageText = message.parts
+                ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+                .map((p) => p.text)
+                .join("") || "";
+              const parsed = isAssistant ? parseChatStream(messageText) : null;
+              const displayText = parsed ? parsed.text : messageText;
               const isLastAssistant =
                 isAssistant &&
                 isLoading &&
@@ -124,7 +131,13 @@ export function ChatBar({ projectId }: ChatBarProps) {
 
       {/* Input bar */}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = input.trim();
+          if (!trimmed || isLoading) return;
+          sendMessage({ text: trimmed });
+          setInput("");
+        }}
         className={cn(
           "flex items-center gap-3 border-t border-dashed border-border bg-background px-6 py-3",
           hasMessages && "mx-4 border border-dashed border-border border-t-0"
@@ -135,7 +148,7 @@ export function ChatBar({ projectId }: ChatBarProps) {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={handleInputChange}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Ask Onera anything..."
           className="h-8 flex-1 border-0 border-b-2 border-border bg-transparent px-1 text-xs focus-visible:border-primary"
         />

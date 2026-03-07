@@ -95,6 +95,11 @@ export const api = {
         `/api/tasks/${id}/execute`,
         { method: "POST", body: JSON.stringify({}) }
       ),
+    retry: (id: string) =>
+      fetchApi<{ message: string; taskId: string; agentName: string }>(
+        `/api/tasks/${id}/retry`,
+        { method: "POST", body: JSON.stringify({}) }
+      ),
     metrics: (projectId: string) =>
       fetchApi<TaskMetrics>(`/api/tasks/metrics?projectId=${projectId}`),
   },

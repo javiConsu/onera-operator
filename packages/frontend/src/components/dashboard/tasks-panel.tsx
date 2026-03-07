@@ -209,6 +209,8 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
     [fetchTasks]
   );
 
+
+
   // Reset loading state when project changes (before new data arrives)
   useEffect(() => {
     setLoading(true);
@@ -453,7 +455,10 @@ function ExpandedDetail({ task }: { task: Task }) {
       api.tasks.get(task.id).then((t) => {
         setFullTask(t);
         setLoading(false);
-      }).catch(() => setLoading(false));
+      }).catch((err) => {
+        console.error(`[tasks-panel] Failed to fetch task ${task.id}:`, err.message || err);
+        setLoading(false);
+      });
     }
   }, [task.id, task.result, task.status]);
 
@@ -513,21 +518,36 @@ function RunningTaskCard({
 }) {
   const elapsed = useElapsedTime(task.updatedAt, true);
 
+  // Consider a task "stuck" if it's been running for more than 10 minutes
+  const elapsedMs = task.updatedAt ? Date.now() - new Date(task.updatedAt).getTime() : 0;
+  const isStuck = elapsedMs > 10 * 60 * 1000;
+
   return (
     <div
-      className="border-2 border-primary/40 bg-primary/5 p-4 space-y-1.5 cursor-pointer transition-colors"
+      className={`border-2 p-4 space-y-1.5 cursor-pointer transition-colors ${
+        isStuck
+          ? "border-amber-500/40 bg-amber-500/5"
+          : "border-primary/40 bg-primary/5"
+      }`}
       onClick={onSelect}
     >
       <div className="flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+        <span className={`h-2 w-2 rounded-full shrink-0 ${
+          isStuck ? "bg-amber-500 animate-pulse" : "bg-primary animate-pulse"
+        }`} />
         <h4 className="font-bold text-[13px] leading-tight flex-1 truncate">{task.title}</h4>
       </div>
+      {isStuck && (
+        <p className="text-[10px] text-amber-600">
+          Recovering — auto-retry in progress
+        </p>
+      )}
       <div className="flex items-center gap-2 flex-wrap">
         <CategoryPill category={task.category} />
         {agentLabel(task.agentName) && (
           <span className="text-[10px] text-muted-foreground">{agentLabel(task.agentName)}</span>
         )}
-        <span className="text-[10px] text-primary font-semibold ml-auto">
+        <span className={`text-[10px] font-semibold ml-auto ${isStuck ? "text-amber-600" : "text-primary"}`}>
           {elapsed || "0s"}
         </span>
       </div>

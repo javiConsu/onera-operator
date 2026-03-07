@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
+import { TextStreamChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { cn, parseChatStream } from "@/lib/utils";
@@ -12,15 +13,19 @@ interface AskPanelProps {
 
 export function AskPanel({ projectId }: AskPanelProps) {
   const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, append } =
+  const { messages, sendMessage, status } =
     useChat({
-      api: "/api/chat",
-      body: { projectId },
-      streamProtocol: "text",
+      transport: new TextStreamChatTransport({
+        api: "/api/chat",
+        body: { projectId },
+      }),
     });
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,7 +85,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
                     disabled={isLoading}
                     className="block w-full text-left text-[11px] text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary/40 px-3 py-2 transition-colors disabled:opacity-50"
                     onClick={() => {
-                      append({ role: "user", content: s });
+                      sendMessage({ text: s });
                     }}
                   >
                     {s}
@@ -91,8 +96,12 @@ export function AskPanel({ projectId }: AskPanelProps) {
 
             {messages.map((message) => {
               const isAssistant = message.role === "assistant";
-              const parsed = isAssistant ? parseChatStream(message.content) : null;
-              const displayText = parsed ? parsed.text : message.content;
+              const messageText = message.parts
+                ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+                .map((p) => p.text)
+                .join("") || "";
+              const parsed = isAssistant ? parseChatStream(messageText) : null;
+              const displayText = parsed ? parsed.text : messageText;
               // Show active status on the last assistant message while streaming
               const isLastAssistant =
                 isAssistant &&
@@ -107,7 +116,7 @@ export function AskPanel({ projectId }: AskPanelProps) {
                   </span>
                   {message.role === "user" ? (
                     <div className="text-xs leading-relaxed text-muted-foreground">
-                      {message.content}
+                      {messageText}
                     </div>
                   ) : (
                     <div className="border-l-2 border-primary pl-3 text-xs leading-relaxed prose-sm">
@@ -193,14 +202,19 @@ export function AskPanel({ projectId }: AskPanelProps) {
 
           {/* Input */}
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!input.trim() || isLoading) return;
+              sendMessage({ text: input });
+              setInput("");
+            }}
             className="shrink-0 flex items-center gap-2 border-t border-dashed border-border px-4 py-3"
           >
             <input
               ref={inputRef}
               type="text"
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything..."
               disabled={isLoading}
               className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:opacity-50"

@@ -13,7 +13,7 @@ import { LiveFeed } from "./live-feed";
 interface CompanyPanelProps {
   projectName: string;
   projectId?: string;
-  credits: number;
+  credits: number | null;
   projectWebsite?: string | null;
   projectDescription?: string | null;
 }
@@ -47,8 +47,8 @@ export function CompanyPanel({
       setProject(projectData);
       setEmails(emailData);
       setLastUpdated(new Date());
-    } catch {
-      // ignore
+    } catch (err: any) {
+      console.error("[company-panel] Failed to fetch data:", err.message || err);
     }
   }, [projectId]);
 
@@ -64,8 +64,8 @@ export function CompanyPanel({
     setTriggering(true);
     try {
       await api.loop.trigger(projectId);
-    } catch {
-      // ignore
+    } catch (err: any) {
+      console.error("[company-panel] Loop trigger failed:", err.message || err);
     } finally {
       setTriggering(false);
       fetchData();
@@ -79,8 +79,8 @@ export function CompanyPanel({
     setTriggeringAgent(agentName);
     try {
       await api.agents.trigger(agentName, projectId);
-    } catch {
-      // ignore
+    } catch (err: any) {
+      console.error(`[company-panel] Agent trigger failed (${agentName}):`, err.message || err);
     } finally {
       setTriggeringAgent(null);
       fetchData();

@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [credits, setCredits] = useState<number>(100);
+  const [credits, setCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const router = useRouter();
@@ -27,14 +27,17 @@ export default function DashboardPage() {
 
     Promise.all([
       api.projects.list(),
-      api.users.credits().catch(() => ({ credits: 100 })),
+      api.users.credits().catch((err) => {
+        console.error("[dashboard] Failed to fetch credits:", err.message || err);
+        return { credits: null };
+      }),
     ])
       .then(([p, creditsData]) => {
         setProjects(p);
         if (p.length > 0) {
           setSelectedProject(p[0]!);
         }
-        setCredits(creditsData.credits);
+        if (creditsData.credits != null) setCredits(creditsData.credits);
       })
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
