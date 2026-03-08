@@ -1,16 +1,15 @@
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { AbsoluteFill } from "remotion";
 import { C } from "../colors";
 import { monoFont } from "../fonts";
 
 /**
- * Dark blueprint background with animated grid lines, subtle glow vignette,
+ * Dark blueprint background with static grid lines, subtle glow vignette,
  * and dimension annotations along the edges.
  */
 export const BlueprintBackground = ({ children }: { children?: React.ReactNode }) => {
-  const frame = useCurrentFrame();
-  // Subtle grid drift for life
-  const offsetX = (frame * 0.15) % 40;
-  const offsetY = (frame * 0.1) % 40;
+  // Grid line colors — very subtle, just barely visible
+  const fineLineColor = "rgba(255, 255, 255, 0.06)";
+  const majorLineColor = "rgba(255, 255, 255, 0.12)";
 
   return (
     <AbsoluteFill
@@ -19,27 +18,25 @@ export const BlueprintBackground = ({ children }: { children?: React.ReactNode }
         overflow: "hidden",
       }}
     >
-      {/* Fine grid (40px) */}
+      {/* Fine grid (60px) — static, no animation */}
       <AbsoluteFill
         style={{
           backgroundImage: `
-            linear-gradient(${C.line} 1px, transparent 1px),
-            linear-gradient(90deg, ${C.line} 1px, transparent 1px)
+            linear-gradient(${fineLineColor} 1px, transparent 1px),
+            linear-gradient(90deg, ${fineLineColor} 1px, transparent 1px)
           `,
-          backgroundSize: "40px 40px",
-          backgroundPosition: `${offsetX}px ${offsetY}px`,
+          backgroundSize: "60px 60px",
         }}
       />
 
-      {/* Major grid (160px = every 4th line, brighter) */}
+      {/* Major grid (240px = every 4th line, slightly brighter) — static */}
       <AbsoluteFill
         style={{
           backgroundImage: `
-            linear-gradient(${C.lineStrong} 1px, transparent 1px),
-            linear-gradient(90deg, ${C.lineStrong} 1px, transparent 1px)
+            linear-gradient(${majorLineColor} 1px, transparent 1px),
+            linear-gradient(90deg, ${majorLineColor} 1px, transparent 1px)
           `,
-          backgroundSize: "160px 160px",
-          backgroundPosition: `${offsetX}px ${offsetY}px`,
+          backgroundSize: "240px 240px",
         }}
       />
 
