@@ -23,6 +23,9 @@ const categoryEnum = z.enum([
 ]);
 
 const priorityEnum = z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
+
+/** Only execution agents that exist in the agent registry — prevents task failures from invalid agent names */
+const agentNameEnum = z.enum(["twitter", "outreach", "research", "engineer", ""]);
 const statusEnum = z.enum([
   "PENDING",
   "IN_PROGRESS",
@@ -192,7 +195,7 @@ export function createTaskManagerTools(context: TaskToolContext) {
       category: categoryEnum.describe("Task category."),
       priority: priorityEnum.describe("Task priority level."),
       automatable: z.boolean().describe("Whether this task can be automated by an agent. Use true if unsure."),
-      agentName: z.string().describe("Agent to assign. Use an empty string for no agent assignment."),
+      agentName: agentNameEnum.describe("Agent to assign: 'twitter', 'outreach', 'research', 'engineer', or '' for no agent."),
     }),
     execute: async ({
       projectId: rawProjectId,
@@ -252,7 +255,8 @@ export function createTaskManagerTools(context: TaskToolContext) {
         "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED", "UNCHANGED",
       ]).describe("New status. Use 'UNCHANGED' to leave unchanged."),
       automatable: z.string().describe("'true', 'false', or 'unchanged'. Whether the task can be automated."),
-      agentName: z.string().describe("New agent name. Use an empty string to leave unchanged, or 'none' to unassign."),
+      agentName: z.enum(["twitter", "outreach", "research", "engineer", "", "none"])
+        .describe("New agent: 'twitter', 'outreach', 'research', 'engineer', '' to leave unchanged, or 'none' to unassign."),
     }),
     execute: async ({
       taskId,

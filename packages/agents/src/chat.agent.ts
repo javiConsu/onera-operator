@@ -47,7 +47,8 @@ export function streamChatAgent(
       "- Outreach/cold emails: assign to 'outreach' agent\n" +
       "- Research/leads/competitors: assign to 'research' agent\n" +
       "- Code/scripts/engineering: assign to 'engineer' agent\n" +
-      "- Planning/strategy: assign to 'planner' agent\n" +
+      "- Planning/strategy: break it into concrete tasks and assign each to the appropriate agent above\n" +
+      "IMPORTANT: Only assign to twitter, outreach, research, or engineer. Never assign to 'planner' or 'report'.\n" +
       "Tell the user you've queued the task and which agent will handle it. " +
       "You can use listProjectTasks to check current task status and webSearch for quick lookups.\n\n" +
       "## Writing style\n" +

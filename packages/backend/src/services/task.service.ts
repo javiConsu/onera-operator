@@ -1,4 +1,8 @@
 import { prisma, TaskStatus, TweetQueueStatus, type TaskCategory, type TaskPriority } from "@onera/database";
+import { listAgentNames } from "@onera/agents";
+
+/** Agent names that have execution runners in the registry */
+const EXECUTION_AGENT_NAMES = listAgentNames(); // ["twitter", "outreach", "research", "engineer"]
 
 export interface TaskFilters {
   projectId?: string;
@@ -85,7 +89,12 @@ export async function createTask(data: {
   agentName?: string;
   scheduledFor?: Date;
 }) {
-  return prisma.task.create({ data });
+  // Normalize agent name to lowercase to match the execution agent registry keys
+  const normalized = { ...data };
+  if (normalized.agentName) {
+    normalized.agentName = normalized.agentName.toLowerCase();
+  }
+  return prisma.task.create({ data: normalized });
 }
 
 export async function createManyTasks(
@@ -100,7 +109,12 @@ export async function createManyTasks(
     credits?: number;
   }>
 ) {
-  return prisma.task.createMany({ data: tasks });
+  // Normalize agent names to lowercase to match the execution agent registry keys
+  const normalized = tasks.map((t) => ({
+    ...t,
+    agentName: t.agentName ? t.agentName.toLowerCase() : t.agentName,
+  }));
+  return prisma.task.createMany({ data: normalized });
 }
 
 export async function updateTaskStatus(
@@ -131,6 +145,10 @@ export async function updateTask(
   }
 ) {
   const update: Record<string, unknown> = { ...data };
+  // Normalize agent name to lowercase
+  if (typeof data.agentName === "string") {
+    update.agentName = data.agentName.toLowerCase();
+  }
   if (data.status === TaskStatus.COMPLETED) {
     update.completedAt = new Date();
   }
@@ -153,7 +171,8 @@ export async function getPendingAutomatableTasks(projectId?: string) {
   const where: Record<string, unknown> = {
     status: TaskStatus.PENDING,
     automatable: true,
-    agentName: { not: null },
+    // Only fetch tasks assigned to known execution agents — skip planner, report, chat, etc.
+    agentName: { in: EXECUTION_AGENT_NAMES },
   };
   if (projectId) where.projectId = projectId;
 

@@ -89,7 +89,35 @@ export function startTaskWorker(): Worker<TaskExecutionJob> {
         // Get the agent executor
         const executor = getExecutionAgent(agentName);
         if (!executor) {
-          throw new Error(`No execution agent found for "${agentName}"`);
+          // Non-execution agents (planner, report, chat) should never be queued.
+          // Mark the task as FAILED with a clear message and do NOT retry.
+          const errMsg = `No execution agent found for "${agentName}". Only twitter, outreach, research, and engineer are executable agents.`;
+          console.warn(`[task-worker] ${errMsg} — marking task "${taskTitle}" as FAILED (no retry)`);
+
+          await createExecutionLog({
+            taskId,
+            agentName,
+            action: `Rejected task: ${taskTitle}`,
+            input: JSON.stringify({ taskDescription }),
+            output: JSON.stringify({ error: errMsg }),
+            status: "error",
+            duration: Date.now() - startTime,
+          });
+
+          await updateTaskStatus(taskId, "FAILED", JSON.stringify({ error: errMsg }));
+          await upsertAgentStatus(agentName, displayName, { status: "idle" });
+
+          publishAgentEvent({
+            type: "failed",
+            agentName,
+            taskId,
+            taskTitle,
+            projectId,
+            message: `${displayName} rejected: no execution agent for "${agentName}"`,
+            data: { error: errMsg },
+          });
+
+          return; // Do NOT throw — prevents BullMQ retries
         }
 
         // Build project context for the agent
