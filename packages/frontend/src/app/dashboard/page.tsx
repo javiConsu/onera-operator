@@ -161,8 +161,15 @@ export default function DashboardPage() {
         </CollapsibleColumn>
       </div>
 
-      {/* Floating Ask Operator chat widget */}
-      <AskPanel projectId={selectedProject?.id} />
+      {/* Floating Ask Operator chat widget — with company switcher */}
+      <AskPanel
+        projectId={selectedProject?.id}
+        projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+        onProjectChange={(id) => {
+          const match = projects.find((p) => p.id === id);
+          if (match) setSelectedProject(match);
+        }}
+      />
     </div>
   );
 }
