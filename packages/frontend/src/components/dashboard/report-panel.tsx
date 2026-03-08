@@ -78,36 +78,55 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
   );
 }
 
+/** Replace common HTML entities that LLMs emit with their actual Unicode chars */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&check;/g, "\u2713")
+    .replace(/&bull;/g, "\u2022")
+    .replace(/&mdash;/g, "\u2014")
+    .replace(/&ndash;/g, "\u2013")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&rarr;/g, "\u2192")
+    .replace(/&larr;/g, "\u2190")
+    .replace(/&hellip;/g, "\u2026");
+}
+
 function parseJsonField(value: string | null): string[] {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
     if (Array.isArray(parsed)) {
       return parsed.map((item) => {
-        if (typeof item === "string") return item;
+        if (typeof item === "string") return decodeEntities(item);
         if (typeof item === "object" && item !== null) {
           // Handle {title, category} objects from report worker
           const obj = item as Record<string, unknown>;
-          return (obj.title as string) || (obj.name as string) || JSON.stringify(item);
+          const text = (obj.title as string) || (obj.name as string) || JSON.stringify(item);
+          return decodeEntities(text);
         }
-        return String(item);
+        return decodeEntities(String(item));
       });
     }
     if (typeof parsed === "object" && parsed !== null) {
       return Object.values(parsed as Record<string, unknown>).map((v) => {
-        if (typeof v === "string") return v;
+        if (typeof v === "string") return decodeEntities(v);
         if (typeof v === "object" && v !== null) {
           const obj = v as Record<string, unknown>;
-          return (obj.title as string) || JSON.stringify(v);
+          const text = (obj.title as string) || JSON.stringify(v);
+          return decodeEntities(text);
         }
-        return String(v);
+        return decodeEntities(String(v));
       });
     }
-    return [String(parsed)];
+    return [decodeEntities(String(parsed))];
   } catch {
     return value
       .split("\n")
-      .map((s) => s.trim())
+      .map((s) => decodeEntities(s.trim()))
       .filter(Boolean);
   }
 }
@@ -123,13 +142,13 @@ function parseMetrics(value: string | null): {
     const parsed = JSON.parse(value) as Record<string, unknown>;
     return {
       highlights: Array.isArray(parsed.highlights)
-        ? (parsed.highlights as string[])
+        ? (parsed.highlights as string[]).map(decodeEntities)
         : [],
       blockers: Array.isArray(parsed.blockers)
-        ? (parsed.blockers as string[])
+        ? (parsed.blockers as string[]).map(decodeEntities)
         : [],
       nextSteps: Array.isArray(parsed.nextSteps)
-        ? (parsed.nextSteps as string[])
+        ? (parsed.nextSteps as string[]).map(decodeEntities)
         : [],
     };
   } catch {
@@ -209,7 +228,7 @@ function ReportEntry({ report }: { report: DailyReport }) {
         {/* General content (rendered as markdown) */}
         {report.content && (
           <div className="mb-3 text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1 [&_h2]:text-[10px] [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:text-muted-foreground [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1 [&_p]:my-1.5 [&_p]:text-foreground/80 [&_ul]:my-1 [&_ul]:pl-4 [&_ul]:list-disc [&_ol]:my-1 [&_ol]:pl-4 [&_ol]:list-decimal [&_li]:my-0.5 [&_li]:text-foreground/80 [&_strong]:font-semibold [&_strong]:text-foreground [&_hr]:my-3 [&_hr]:border-dashed [&_hr]:border-border [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[11px] [&_code]:rounded">
-            <ReactMarkdown>{report.content.replace(/&check;/g, "\u2713").replace(/&bull;/g, "\u2022")}</ReactMarkdown>
+            <ReactMarkdown>{decodeEntities(report.content)}</ReactMarkdown>
           </div>
         )}
 
