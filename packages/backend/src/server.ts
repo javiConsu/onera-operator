@@ -20,7 +20,6 @@ const PUBLIC_PATHS = new Set([
   "/api/public/live",
   "/api/public/ask",
   "/api/billing/webhooks",
-  "/api/activity/stream",
 ]);
 
 function isPublicPath(path: string): boolean {

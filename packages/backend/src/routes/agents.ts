@@ -7,6 +7,23 @@ import { AGENT_DISPLAY_NAMES } from "@onera/agents";
 import { prisma } from "@onera/database";
 import { createActivitySubscriber, type AgentEvent } from "../services/activity.service.js";
 
+/** Verify the authenticated user owns a project. Returns true if valid, sends 404 and returns false otherwise. */
+async function verifyProjectOwnership(
+  projectId: string,
+  userId: string,
+  reply: import("fastify").FastifyReply
+): Promise<boolean> {
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, userId },
+    select: { id: true },
+  });
+  if (!project) {
+    reply.code(404).send({ error: "Project not found" });
+    return false;
+  }
+  return true;
+}
+
 export async function agentRoutes(app: FastifyInstance) {
   // List all agent statuses
   app.get("/api/agents", async (_request, reply) => {
@@ -31,6 +48,13 @@ export async function agentRoutes(app: FastifyInstance) {
     "/api/activity",
     async (request, reply) => {
       const { projectId } = request.query;
+
+      // Verify the authenticated user owns this project
+      if (projectId) {
+        if (!(await verifyProjectOwnership(projectId, request.authUser!.id, reply))) {
+          return;
+        }
+      }
 
       // Get agent statuses
       const agents = await getAgentStatuses();
@@ -84,11 +108,18 @@ export async function agentRoutes(app: FastifyInstance) {
     }
   );
 
-  // SSE stream for real-time agent activity events
+  // SSE stream for real-time agent activity events (requires auth)
   app.get<{ Querystring: { projectId?: string } }>(
     "/api/activity/stream",
     async (request, reply) => {
       const { projectId } = request.query;
+
+      // Verify the authenticated user owns this project
+      if (projectId) {
+        if (!(await verifyProjectOwnership(projectId, request.authUser!.id, reply))) {
+          return;
+        }
+      }
 
       reply.raw.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -178,6 +209,11 @@ export async function agentRoutes(app: FastifyInstance) {
 
     if (!projectId) {
       return reply.code(400).send({ error: "projectId is required" });
+    }
+
+    // Verify the authenticated user owns this project
+    if (!(await verifyProjectOwnership(projectId, request.authUser!.id, reply))) {
+      return;
     }
 
     // Validate agent name

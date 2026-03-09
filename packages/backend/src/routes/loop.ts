@@ -1,5 +1,23 @@
 import type { FastifyInstance } from "fastify";
 import { getSchedulerQueue, getReportQueue } from "../queue/scheduler.queue.js";
+import { prisma } from "@onera/database";
+
+/** Verify the authenticated user owns a project. Returns true if valid, sends 404 and returns false otherwise. */
+async function verifyProjectOwnership(
+  projectId: string,
+  userId: string,
+  reply: import("fastify").FastifyReply
+): Promise<boolean> {
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, userId },
+    select: { id: true },
+  });
+  if (!project) {
+    reply.code(404).send({ error: "Project not found" });
+    return false;
+  }
+  return true;
+}
 
 export async function loopRoutes(app: FastifyInstance) {
   // Manually trigger one agent loop cycle
@@ -7,6 +25,13 @@ export async function loopRoutes(app: FastifyInstance) {
     "/api/loop/trigger",
     async (request, reply) => {
       const { projectId } = request.body || {};
+
+      if (projectId) {
+        if (!(await verifyProjectOwnership(projectId, request.authUser!.id, reply))) {
+          return;
+        }
+      }
+
       const queue = getSchedulerQueue();
 
       await queue.add("manual-agent-loop", {
@@ -26,6 +51,13 @@ export async function loopRoutes(app: FastifyInstance) {
     "/api/reports/generate",
     async (request, reply) => {
       const { projectId } = request.body || {};
+
+      if (projectId) {
+        if (!(await verifyProjectOwnership(projectId, request.authUser!.id, reply))) {
+          return;
+        }
+      }
+
       const queue = getReportQueue();
 
       await queue.add("manual-daily-report", {
