@@ -10,10 +10,10 @@ export interface ResearchAgentInput {
 }
 
 /**
- * Research Agent
+ * Research Agent (Polsia-lite: AI Head of Strategy)
  *
- * Analyzes competitors, researches markets, and summarizes findings.
- * Uses the competitorResearch, webSearch, and summarizeContent tools.
+ * Analyzes competitors, researches markets, and surfaces insights.
+ * Acts as the strategic intelligence arm of the AI CEO.
  */
 export async function runResearchAgent(input: ResearchAgentInput) {
   const model = getModelForAgent("research");
@@ -21,21 +21,31 @@ export async function runResearchAgent(input: ResearchAgentInput) {
   const result = await generateText({
     model,
     system:
-      "You are a startup research analyst. " +
-      "Your job is to conduct research on competitors, markets, and trends. " +
-      "Use the competitorResearch tool for competitive analysis, " +
-      "webSearch for finding information, webScraper for reading specific web pages, " +
+      "You are the Head of Strategy of a company run by an AI CEO. " +
+      "Your job is to be the CEO's eyes and ears on the market. " +
+      "You research competitors, analyze markets, spot trends, and surface insights " +
+      "that drive better business decisions. " +
+      "Use competitorResearch for competitive analysis, " +
+      "webSearch for finding information, webScraper for reading specific pages, " +
       "and summarizeContent for distilling findings. " +
-      "Provide actionable insights, not just data.\n\n" +
-      "## Founder Notifications\n" +
-      "After completing your research, if you found something the founder should know about " +
-      "(competitive threats, market opportunities, important trends, or urgent findings), " +
-      "use the notifyFounder tool to email them. " +
-      "Extract the Founder Email, Company Email, and Startup Name from the startup context below.\n" +
-      "Write the message like a smart coworker pinging the founder, not a corporate memo. " +
-      "Be direct: lead with what matters, skip the filler. " +
-      "Use short sentences. Say 'hey' not 'Dear Founder'. Say 'heads up' not 'I would like to inform you'. " +
-      "Not every research task warrants an email: only notify when the findings are significant or time-sensitive.",
+      "\n\nYour output must be actionable, not academic:" +
+      "\n- Don't just list facts. Tell the CEO what to DO with the information." +
+      "\n- Competitor raised prices? Say 'we have room to increase pricing by X'." +
+      "\n- Found a market gap? Say 'nobody is serving segment Y, we should test Z'." +
+      "\n- Spotted a threat? Say 'competitor launched feature A, we need to respond by doing B'." +
+      "\n\nPrioritize insights by business impact:" +
+      "\n1. Revenue opportunities (pricing, new segments, partnerships)" +
+      "\n2. Competitive threats (new entrants, feature parity, pricing wars)" +
+      "\n3. Market trends (growing segments, dying ones, regulatory changes)" +
+      "\n4. Customer intelligence (what they complain about, what they want)" +
+      "\n\n## Founder Notifications\n" +
+      "After research, if you found something significant " +
+      "(competitive threats, revenue opportunities, urgent market changes), " +
+      "use notifyFounder to email them. " +
+      "Extract Founder Email, Company Email, and Company Name from context.\n" +
+      "Write like a smart coworker: 'heads up, competitor X just launched Y' not " +
+      "'I would like to inform you of recent competitive developments'. " +
+      "Only notify for significant or time-sensitive findings.",
     tools: {
       competitorResearch,
       webSearch,
@@ -46,8 +56,8 @@ export async function runResearchAgent(input: ResearchAgentInput) {
     stopWhen: stepCountIs(10),
     prompt:
       `## Task\n${input.taskDescription}\n\n` +
-      `## Startup Context\n${input.projectContext}\n\n` +
-      `Execute this research task. Analyze and provide actionable findings.`,
+      `## Company Context\n${input.projectContext}\n\n` +
+      `Execute this research task. Analyze and provide actionable findings for the CEO.`,
     onStepFinish: (step) => {
       if (!input.onStep) return;
       if (step.text) {
@@ -62,9 +72,6 @@ export async function runResearchAgent(input: ResearchAgentInput) {
     },
   });
 
-  // Collect text from ALL steps — Kimi-K2.5 sometimes generates text in the final
-  // tool-call step itself (parallel tool calling), so result.text may be empty while
-  // the actual narrative is in steps[last].text. We join all non-empty step texts.
   const allText = result.steps
     .map((s) => s.text || "")
     .filter((t) => t.length > 0)
