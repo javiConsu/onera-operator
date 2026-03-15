@@ -33,7 +33,7 @@ export function BillingSection() {
       const { checkoutUrl } = await api.billing.subscribe();
       window.open(checkoutUrl, "_blank");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start subscription");
+      setError(err instanceof Error ? err.message : "Error al iniciar la suscripción");
     } finally {
       setSubscribing(false);
     }
@@ -46,7 +46,7 @@ export function BillingSection() {
       const { checkoutUrl } = await api.billing.purchase(packSlug);
       window.open(checkoutUrl, "_blank");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Purchase failed");
+      setError(err instanceof Error ? err.message : "Error en la compra");
     } finally {
       setPurchasing(null);
     }
@@ -81,8 +81,7 @@ export function BillingSection() {
               Start your free trial
             </p>
             <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-              Get 50 credits free for 3 days. After that, $29/mo for 500
-              credits. Cancel anytime.
+              Obtén 50 créditos gratis durante 3 días. Después, 29$/mes por 500 créditos. Cancela cuando quieras.
             </p>
             <Button
               size="sm"
@@ -90,7 +89,7 @@ export function BillingSection() {
               onClick={handleSubscribe}
               disabled={subscribing}
             >
-              {subscribing ? "Opening checkout..." : "Start Free Trial — 50 Credits"}
+              {subscribing ? "Abriendo checkout..." : "Empezar Prueba — 50 Créditos"}
             </Button>
             {error && (
               <p className="text-xs text-destructive mt-2">{error}</p>
@@ -179,7 +178,7 @@ export function BillingSection() {
             <span className="text-xs text-muted-foreground">Subscription</span>
             {billing.isTrialing && billing.trialEndsAt ? (
               <span className="text-xs text-blue-400">
-                Trial ends {new Date(billing.trialEndsAt).toLocaleDateString("en-US", {
+                Trial ends {new Date(billing.trialEndsAt).toLocaleDateString("es-ES", {
                   month: "short",
                   day: "numeric",
                 })}
@@ -200,18 +199,18 @@ export function BillingSection() {
 
         {billing.credits <= 10 && billing.credits > 0 && (
           <p className="text-xs text-yellow-500 mt-2 pt-2 border-t border-dashed border-border">
-            Low credits. Top up to keep agents running.
+            Créditos bajos. Recarga para mantener los agentes activos.
           </p>
         )}
         {billing.credits === 0 && (
           <p className="text-xs text-destructive mt-2 pt-2 border-t border-dashed border-border">
-            No credits. Tasks are paused.
+            Sin créditos. Las tareas están pausadas.
           </p>
         )}
       </div>
 
       {/* Credit packs (top-up) */}
-      <CollapsibleSection title="Top Up" defaultOpen={billing.credits <= 20}>
+      <CollapsibleSection title="Recargar" defaultOpen={billing.credits <= 20}>
         <div className="space-y-2">
           {billing.packs.map((pack: CreditPack) => (
             <button
@@ -241,7 +240,7 @@ export function BillingSection() {
 
       {/* Recent transactions */}
       {billing.recentTransactions.length > 0 && (
-        <CollapsibleSection title="History" defaultOpen={false}>
+        <CollapsibleSection title="Historial" defaultOpen={false}>
           <div className="space-y-1.5 max-h-52 overflow-y-auto">
             {billing.recentTransactions.slice(0, 10).map((tx) => (
               <div
@@ -263,7 +262,7 @@ export function BillingSection() {
                   </span>
                 </div>
                 <span className="text-muted-foreground/60 shrink-0 ml-2">
-                  {new Date(tx.createdAt).toLocaleDateString("en-US", {
+                  {new Date(tx.createdAt).toLocaleDateString("es-ES", {
                     month: "short",
                     day: "numeric",
                   })}

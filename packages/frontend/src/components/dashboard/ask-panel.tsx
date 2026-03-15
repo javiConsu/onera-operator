@@ -52,7 +52,7 @@ function ProjectSwitcher({
   }, [dropdownOpen]);
 
   const activeName =
-    projects.find((p) => p.id === activeProjectId)?.name ?? "Select project";
+    projects.find((p) => p.id === activeProjectId)?.name ?? "Seleccionar proyecto";
 
   return (
     <div ref={ref} className="relative">
@@ -145,9 +145,9 @@ function AskPanelChat({ projectId }: { projectId?: string }) {
   }, []);
 
   const suggestions = [
-    "What are you working on?",
-    "Create a HIGH priority outreach task",
-    "Summarize today's progress",
+    "¿En qué estás trabajando?",
+    "Crear una tarea de captación ALTA prioridad",
+    "Resumir el progreso de hoy",
   ];
 
   return (
@@ -156,7 +156,7 @@ function AskPanelChat({ projectId }: { projectId?: string }) {
       <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Try asking:</p>
+            <p className="text-[11px] text-muted-foreground">Puedes preguntar:</p>
             {suggestions.map((s) => (
               <button
                 key={s}
@@ -198,7 +198,7 @@ function AskPanelChat({ projectId }: { projectId?: string }) {
           return (
             <div key={message.id}>
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
-                {message.role === "user" ? "You" : "Operator"}
+                {message.role === "user" ? "Tú" : "Operador"}
               </span>
               {message.role === "user" ? (
                 <div className="text-xs leading-relaxed text-muted-foreground">
@@ -310,7 +310,7 @@ function AskPanelChat({ projectId }: { projectId?: string }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask anything..."
+          placeholder="Pregunta lo que quieras..."
           disabled={isLoading}
           className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:opacity-50"
         />
@@ -376,7 +376,7 @@ export function AskPanel({
             : "border-border bg-background text-primary hover:border-primary hover:bg-primary/5"
         )}
       >
-        {open ? "Close" : "> Ask Operator"}
+        {open ? "Cerrar" : "> Preguntar a Pulsa"}
       </button>
 
       {/* Chat panel */}
@@ -401,7 +401,7 @@ export function AskPanel({
               )}
             </div>
             <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
-              Ask for status, create tasks, or request updates.
+              Consulta el estado, crea tareas o solicita actualizaciones.
               {activeProjectName && (
                 <span className="ml-1 font-mono text-primary">
                   [{activeProjectName}]

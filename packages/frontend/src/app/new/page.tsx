@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,28 +9,12 @@ import { api } from "@/lib/api-client";
 import Link from "next/link";
 
 export default function NewCompanyPage() {
-  const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  if (!isLoaded) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider animate-pulse">
-          Loading...
-        </span>
-      </div>
-    );
-  }
-
-  if (!isSignedIn) {
-    router.push("/login");
-    return null;
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +30,7 @@ export default function NewCompanyPage() {
       router.push("/dashboard");
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Something went wrong";
+        err instanceof Error ? err.message : "Algo salió mal";
       setError(message);
     } finally {
       setLoading(false);
@@ -57,28 +40,25 @@ export default function NewCompanyPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-background px-4 bp-texture">
       <div className="relative z-10 mx-auto my-auto w-full max-w-lg overflow-y-auto py-8 scrollbar-thin">
-        {/* Back link */}
         <Link
           href="/dashboard"
           className="inline-flex items-center text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider mb-6"
         >
-          &larr; Back to Dashboard
+          &larr; Volver al Panel
         </Link>
 
-        {/* Tag */}
         <div className="inline-block border-2 border-primary bg-primary text-primary-foreground px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">
-          New Company
+          Nueva Empresa
         </div>
 
-        {/* Form card */}
         <div className="border-[1.5px] border-dashed border-border p-8 relative bp-corners">
           <div className="mb-6">
             <h1 className="font-serif text-3xl font-extrabold tracking-tight text-primary">
-              Create a Company
+              Crear una Empresa
             </h1>
             <p className="text-xs text-muted-foreground mt-2">
-              Enter your company name and website. AI will automatically
-              research your product, competitors, and target audience.
+              Introduce el nombre y sitio web de tu empresa. La IA investigará
+              automáticamente tu producto, competidores y público objetivo.
             </p>
           </div>
 
@@ -88,12 +68,12 @@ export default function NewCompanyPage() {
                 htmlFor="name"
                 className="text-[10px] uppercase tracking-wider text-muted-foreground"
               >
-                Company Name
+                Nombre de la Empresa
               </Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Acme Inc."
+                placeholder="Mi Empresa S.L."
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -105,17 +85,17 @@ export default function NewCompanyPage() {
                 htmlFor="website"
                 className="text-[10px] uppercase tracking-wider text-muted-foreground"
               >
-                Website URL
+                URL del Sitio Web
               </Label>
               <Input
                 id="website"
                 type="url"
-                placeholder="https://example.com"
+                placeholder="https://miempresa.com"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Optional &middot; Enables auto-research
+                Opcional &middot; Activa la investigación automática
               </p>
             </div>
 
@@ -132,9 +112,9 @@ export default function NewCompanyPage() {
               disabled={loading || !name.trim()}
             >
               {loading ? (
-                <span className="animate-pulse">Researching...</span>
+                <span className="animate-pulse">Investigando...</span>
               ) : (
-                "Create & Start Research"
+                "Crear e Iniciar Investigación"
               )}
             </Button>
           </form>

@@ -27,7 +27,7 @@ interface OutreachEmail {
   recipientName: string;
   recipientCompany: string;
   to: string;
-  sendStatus: "sent" | "queued" | "rejected" | "failed" | "unknown";
+  sendStatus: "sent" | "en cola" | "rejected" | "failed" | "unknown";
 }
 
 function parseOutreachEmails(resultJson: string): OutreachEmail[] | null {
@@ -57,7 +57,7 @@ function parseOutreachEmails(resultJson: string): OutreachEmail[] | null {
         recipientName: String(g?.recipientName ?? ""),
         recipientCompany: String(g?.recipientCompany ?? ""),
         to,
-        sendStatus: (["sent", "queued", "rejected", "failed"].includes(
+        sendStatus: (["sent", "en cola", "rejected", "failed"].includes(
           String(s?.status)
         )
           ? String(s?.status)
@@ -250,11 +250,11 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
 
   return (
     <CollapsibleSection
-      title="Tasks"
+      title="Tareas"
       badge={
         runningTasks.length > 0 ? (
           <span className="text-[10px] text-primary font-mono animate-pulse">
-            {runningTasks.length} running
+            {runningTasks.length} en curso
           </span>
         ) : undefined
       }
@@ -307,11 +307,11 @@ export function TasksPanel({ projectId }: TasksPanelProps) {
         {tasks.length === 0 && (
           <div className="border border-dashed border-border p-6 text-center">
             <p className="text-xs text-muted-foreground">
-              No tasks yet. The AI planner is analyzing your company...
+              Sin tareas aún. El planificador IA está analizando tu empresa...
             </p>
             <div className="mt-2">
               <span className="text-[10px] text-primary animate-pulse">
-                Planning in progress
+                Planificación en curso
               </span>
             </div>
           </div>
@@ -342,12 +342,12 @@ function CategoryPill({ category }: { category: string }) {
 
 /** Friendly agent display names */
 const AGENT_LABELS: Record<string, string> = {
-  outreach: "Outreach",
+  outreach: "Captación",
   twitter: "Twitter",
-  research: "Research",
-  engineer: "Engineering",
-  planner: "Planner",
-  report: "Reports",
+  research: "Investigación",
+  engineer: "Ingeniería",
+  planner: "Planificador",
+  report: "Informes",
 };
 
 function agentLabel(name: string | null): string | null {
@@ -379,7 +379,7 @@ function parseResult(result: string | null): string | null {
       }
     }
     // For tweets
-    if (typeof r.tweetId === "string") return "Tweet posted successfully";
+    if (typeof r.tweetId === "string") return "Tweet publicado correctamente";
     // Fallback: don't dump raw JSON
     if (typeof r.message === "string") return r.message;
     return null;
@@ -473,7 +473,7 @@ function ExpandedDetail({ task }: { task: Task }) {
   return (
     <div className="mt-2 border-t border-dashed border-border/50 pt-2 space-y-2">
       {loading && (
-        <p className="text-[10px] text-muted-foreground animate-pulse">Loading details...</p>
+        <p className="text-[10px] text-muted-foreground animate-pulse">Cargando detalles...</p>
       )}
       {/* Kimi-generated markdown summary (preferred) */}
       {effectiveTask.summary && (
@@ -494,10 +494,10 @@ function ExpandedDetail({ task }: { task: Task }) {
       {!hasContent && !loading && (
         <p className="text-[10px] text-muted-foreground italic">
           {task.status === "PENDING"
-            ? "Queued, waiting to run"
+            ? "En cola, esperando ejecución"
             : task.status === "IN_PROGRESS"
-              ? "Running now..."
-              : "No result recorded."}
+              ? "Ejecutando..."
+              : "Sin resultado registrado."}
         </p>
       )}
     </div>
@@ -539,7 +539,7 @@ function RunningTaskCard({
       </div>
       {isStuck && (
         <p className="text-[10px] text-amber-600">
-          Recovering — auto-retry in progress
+          Recuperando — reintento automático en curso
         </p>
       )}
       <div className="flex items-center gap-2 flex-wrap">

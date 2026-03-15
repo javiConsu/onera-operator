@@ -95,10 +95,24 @@ function setCachedUser(user: AuthUser): void {
  *
  * Returns 401 if no token or verification fails.
  */
+// Demo user for DEMO_MODE (no auth required)
+export const DEMO_USER: AuthUser = {
+  id: "demo_user_pulsa",
+  email: "demo@pulsa.pro",
+  name: "Demo Pulsa",
+  image: null,
+};
+
 export async function requireAuth(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
+  // --- Demo mode: skip auth, use fixed demo user ---
+  if (process.env.DEMO_MODE === "true") {
+    request.authUser = DEMO_USER;
+    return;
+  }
+
   // --- Fast path: trusted internal call from chat agent tools ---
   const internalSecret = request.headers["x-internal-secret"] as
     | string

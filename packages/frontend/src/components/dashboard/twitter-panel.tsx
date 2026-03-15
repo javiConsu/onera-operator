@@ -129,8 +129,8 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
           <div className="border border-dashed border-border p-4 text-center">
             <p className="text-xs text-muted-foreground">
               {twitterTaskCount > 0
-                ? "Generating tweets..."
-                : "No tweets yet. The AI will compose tweets about your company."}
+                ? "Generando tweets..."
+                : "Sin tweets aún. La IA redactará tweets sobre tu empresa."}
             </p>
           </div>
         )}
@@ -145,7 +145,7 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
 
       {/* Email section */}
       <CollapsibleSection
-        title="Email Outreach"
+        title="Captación por Email"
         badge={
           emails.length > 0 ? (
             <span className="text-[10px] text-muted-foreground">{emails.length} sent</span>
@@ -162,8 +162,8 @@ export function TwitterPanel({ projectId }: TwitterPanelProps) {
           <div className="border border-dashed border-border p-4 text-center">
             <p className="text-xs text-muted-foreground">
               {outreachTaskCount > 0
-                ? "Preparing outreach..."
-                : "No outreach yet. The AI will find leads and send emails."}
+                ? "Preparando captación..."
+                : "Sin captación aún. La IA encontrará leads y enviará emails."}
             </p>
           </div>
         )}
@@ -196,7 +196,7 @@ function EmailCard({ email, projectId, isNew }: { email: ParsedEmail; projectId:
         const full = await api.projects.email(projectId, email.id);
         setBody(full.body);
       } catch {
-        setBody("Failed to load email body.");
+        setBody("Error al cargar el cuerpo del email.");
       }
       setLoading(false);
     }

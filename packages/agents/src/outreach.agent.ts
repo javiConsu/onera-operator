@@ -59,7 +59,8 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
       "After outreach, notify the founder: how many leads found, emails sent, anything notable. " +
       "Extract Founder Email, Company Email, and Company Name from context.\n" +
       "Write it like a Slack message: casual, direct. " +
-      "Say 'sent 5 emails, 2 bounced' not 'I have successfully dispatched correspondence'.",
+      "Say 'sent 5 emails, 2 bounced' not 'I have successfully dispatched correspondence'." +
+      "\n\nIMPORTANT: Write all emails in Spanish (Castilian Spanish). The target market is Spanish-speaking.",
     tools: {
       generateEmail,
       sendEmail,
@@ -70,9 +71,9 @@ export async function runOutreachAgent(input: OutreachAgentInput) {
     },
     stopWhen: stepCountIs(50),
     prompt:
-      `## Task\n${input.taskDescription}\n\n` +
-      `## Company Context\n${input.projectContext}\n\n` +
-      `Execute this outreach task. Find leads, generate personalized emails, and send them.`,
+      `## Tarea\n${input.taskDescription}\n\n` +
+      `## Contexto de la Empresa\n${input.projectContext}\n\n` +
+      `Ejecuta esta tarea de captación. Encuentra leads, genera emails personalizados en español y envíalos.`,
     onStepFinish: (step) => {
       if (!input.onStep) return;
       if (step.text) {

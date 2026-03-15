@@ -1,0 +1,32 @@
+# docker-compose.pulsa.yml
+# Override para Pulsa en producción.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.pulsa.yml up -d
+
+version: "3.9"
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: pulsa
+      POSTGRES_USER: pulsa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}
+    volumes:
+      - pulsadata:/var/lib/postgresql/data
+
+  backend:
+    environment:
+      DATABASE_URL: postgresql://pulsa:${POSTGRES_PASSWORD}@postgres:5432/pulsa
+      # CORS — dominio a confirmar por Javi (ver LAN-98)
+      FRONTEND_URL: ${FRONTEND_URL:-https://app.pulsa.pro}
+      AI_PROVIDER: ${AI_PROVIDER:-anthropic}
+      AI_MODEL: ${AI_MODEL:-claude-sonnet-4-5}
+      AZURE_EMAIL_SENDER: ${AZURE_EMAIL_SENDER:-hola@pulsa.pro}
+
+  frontend:
+    environment:
+      # IMPORTANTE: cambiar cuando el dominio de producción esté confirmado
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-https://api.pulsa.pro}
+      DODO_PAYMENTS_RETURN_URL: ${DODO_PAYMENTS_RETURN_URL:-https://app.pulsa.pro/dashboard?billing=success}
+
+volumes:
+  pulsadata:

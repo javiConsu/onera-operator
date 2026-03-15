@@ -9,6 +9,8 @@ config({ path: resolve(__dirname, "../../../.env") });
 import { buildServer } from "./server.js";
 import { AGENT_DISPLAY_NAMES } from "@onera/agents";
 import { upsertAgentStatus } from "./services/execution.service.js";
+import { ensureUser } from "./services/project.service.js";
+import { DEMO_USER } from "./middleware/auth.js";
 
 async function main() {
   const port = parseInt(process.env.BACKEND_PORT || "3001", 10);
@@ -24,6 +26,18 @@ async function main() {
   } catch (err) {
     server.log.error(err);
     process.exit(1);
+  }
+
+  // Seed demo user if DEMO_MODE is enabled
+  if (process.env.DEMO_MODE === "true") {
+    await ensureUser({
+      id: DEMO_USER.id,
+      email: DEMO_USER.email,
+      name: DEMO_USER.name ?? undefined,
+    }).catch((err) => {
+      console.warn("[init] Failed to seed demo user:", err.message || err);
+    });
+    console.log(`[onera] Demo mode active — user: ${DEMO_USER.email}`);
   }
 
   // Initialize agent statuses in the database (non-blocking)

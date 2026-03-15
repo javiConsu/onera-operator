@@ -62,11 +62,11 @@ export async function runPlannerAgent(input: PlannerInput) {
       "\n- Good example: 'Tweet about how gym owners waste half their day on admin and our product automates it'" +
       "\n- Bad example: 'Create social media content for the startup'",
     prompt:
-      `## Company Context\n${input.projectContext}\n\n` +
-      `## Previous Tasks\n${input.previousTasks || "No previous tasks yet."}\n\n` +
-      `## Completed Work\n${input.completedWork || "No completed work yet."}\n\n` +
-      `## Current Metrics\n${input.currentMetrics || "No metrics available yet."}\n\n` +
-      `You are the CEO. Analyze the current state of the business and decide what to do next. Generate the next batch of tasks.`,
+      `## Contexto de la Empresa\n${input.projectContext}\n\n` +
+      `## Tareas Anteriores\n${input.previousTasks || "Sin tareas previas aún."}\n\n` +
+      `## Trabajo Completado\n${input.completedWork || "Sin trabajo completado aún."}\n\n` +
+      `## Métricas Actuales\n${input.currentMetrics || "Sin métricas disponibles aún."}\n\n` +
+      `Eres el CEO. Analiza el estado actual del negocio y decide qué hacer a continuación. Genera el siguiente lote de tareas en español.`,
   });
 
   return object;

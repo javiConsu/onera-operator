@@ -106,7 +106,7 @@ export function LiveFeed({ projectId }: LiveFeedProps) {
           </span>
         </div>
         <p className="text-xs text-muted-foreground/60 font-mono">
-          Waiting for agent activity...
+          Esperando actividad de los agentes...
         </p>
       </div>
     );
@@ -169,10 +169,10 @@ function formatEventMessage(event: AgentEvent): string {
     case "completed": {
       const preview = (event.data?.text as string) || "";
       const short = preview.length > 80 ? preview.slice(0, 80) + "..." : preview;
-      return short ? `Done: ${short}` : `Completed: ${event.taskTitle}`;
+      return short ? `Completado: ${short}` : `Completado: ${event.taskTitle}`;
     }
     case "failed":
-      return `Failed: ${(event.data?.error as string) || event.taskTitle}`;
+      return `Error: ${(event.data?.error as string) || event.taskTitle}`;
     default:
       return event.message;
   }
@@ -181,7 +181,7 @@ function formatEventMessage(event: AgentEvent): string {
 function formatTime(iso: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleTimeString("en-US", {
+    return d.toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",

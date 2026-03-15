@@ -105,12 +105,12 @@ export function CompanyPanel({
   const runningAgents = agents.filter((a) => a.status === "running");
   const isWorking = metrics && (metrics.inProgress > 0 || metrics.pending > 0);
   const status = isPaused
-    ? "Paused"
+    ? "Pausado"
     : metrics?.inProgress
-      ? "Working"
+      ? "Trabajando"
       : metrics?.pending
-        ? "Planning"
-        : "Active";
+        ? "Planificando"
+        : "Activo";
 
   // Parse JSON fields for display
   const competitors = (() => {
@@ -145,9 +145,9 @@ export function CompanyPanel({
             <Link
               href={`/projects/${projectId}`}
               className="text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider shrink-0 mt-1"
-              title="Project Settings"
+              title="Configuración del Proyecto"
             >
-              settings
+              ajustes
             </Link>
           )}
         </div>
@@ -183,12 +183,12 @@ export function CompanyPanel({
             </Badge>
             <p className="text-xs text-muted-foreground mt-1.5 uppercase tracking-wider">
               {isPaused
-                ? "Agent loops suspended"
+                ? "Bucles de agentes suspendidos"
                 : metrics?.inProgress
-                  ? `Running ${metrics.inProgress} task${metrics.inProgress > 1 ? "s" : ""}`
+                  ? `Ejecutando ${metrics.inProgress} tarea${metrics.inProgress > 1 ? "s" : ""}`
                   : metrics?.pending
-                    ? `${metrics.pending} task${metrics.pending > 1 ? "s" : ""} queued`
-                    : "Ready to execute"}
+                    ? `${metrics.pending} tarea${metrics.pending > 1 ? "s" : ""} en cola`
+                    : "Listo para ejecutar"}
             </p>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function CompanyPanel({
       {/* All agents roster */}
       {agents.length > 0 && (
         <CollapsibleSection
-          title="Agents"
+          title="Agentes"
           badge={
             runningAgents.length > 0 ? (
               <span className="text-xs text-primary font-mono animate-pulse">
@@ -265,7 +265,7 @@ export function CompanyPanel({
                         className="h-6 border-dashed px-2 py-0 text-[11px]"
                         title={`Run all pending ${agent.displayName} tasks`}
                       >
-                        {isTriggeringThis ? "..." : "Run"}
+                        {isTriggeringThis ? "..." : "Ejecutar"}
                       </Button>
                     )}
                     <span className="text-xs text-muted-foreground/60">
@@ -294,7 +294,7 @@ export function CompanyPanel({
           onClick={handleTogglePause}
           disabled={togglingPause || !projectId}
         >
-          {togglingPause ? "..." : isPaused ? "Unpause" : "Pause"}
+          {togglingPause ? "..." : isPaused ? "Reanudar" : "Pausar"}
         </Button>
         <Button
           size="sm"
@@ -303,7 +303,7 @@ export function CompanyPanel({
           onClick={handleTriggerLoop}
           disabled={triggering || !projectId || isPaused}
         >
-          {triggering ? "Triggering..." : "Run Agent Loop"}
+          {triggering ? "Iniciando..." : "Ejecutar Ciclo de Agentes"}
         </Button>
       </div>
       {isPaused && (
@@ -317,7 +317,7 @@ export function CompanyPanel({
 
       {/* Project intelligence */}
       {(project?.product || project?.targetUsers || competitors.length > 0 || goals.length > 0) && (
-        <CollapsibleSection title="Intelligence" defaultOpen={false}>
+        <CollapsibleSection title="Inteligencia" defaultOpen={false}>
           <div className="space-y-3">
             {project?.product && (
               <div>
@@ -359,7 +359,7 @@ export function CompanyPanel({
 
       {/* Task metrics */}
       {metrics && (
-        <CollapsibleSection title="Operations">
+        <CollapsibleSection title="Operaciones">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Completed</span>
@@ -392,7 +392,7 @@ export function CompanyPanel({
       {/* Email log */}
       {emails.length > 0 && (
         <CollapsibleSection
-          title="Email Log"
+          title="Registro de Emails"
           badge={
             <span className="text-xs text-muted-foreground font-mono">
               {emails.filter((e) => e.status === "SENT").length} sent
@@ -438,7 +438,7 @@ export function CompanyPanel({
 
       {/* Last updated */}
       <div className="text-xs text-muted-foreground">
-        Updated {formatRelativeTime(lastUpdated.toISOString())}
+        Actualizado {formatRelativeTime(lastUpdated.toISOString())}
         <button
           className="ml-1.5 text-primary hover:underline"
           onClick={fetchData}

@@ -187,7 +187,7 @@ export function EngineerPanel({ projectId }: EngineerPanelProps) {
 
   return (
     <CollapsibleSection
-      title="Engineering"
+      title="Ingeniería"
       badge={
         runningCount > 0 ? (
           <span className="text-[10px] text-yellow-600 animate-pulse font-mono">

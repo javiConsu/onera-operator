@@ -45,7 +45,7 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
         </h3>
         <div className="flex items-center justify-center py-8">
           <span className="text-xs text-muted-foreground animate-pulse">
-            Loading...
+            Cargando...
           </span>
         </div>
       </div>
@@ -54,7 +54,7 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
 
   return (
     <CollapsibleSection
-      title="Daily Report"
+      title="Informe Diario"
       badge={
         reports.length > 0 ? (
           <span className="text-[10px] text-muted-foreground">{reports.length} reports</span>
@@ -65,8 +65,7 @@ export function ReportPanel({ projectId }: ReportPanelProps) {
         {reports.length === 0 && (
           <div className="border border-dashed border-border p-6 text-center">
             <p className="text-xs text-muted-foreground">
-              No reports yet. Reports are generated automatically each day at 6
-              PM.
+              Sin informes aún. Se generan automáticamente cada día a las 6 PM.
             </p>
           </div>
         )}

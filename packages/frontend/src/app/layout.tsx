@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { AuthInit } from "@/components/auth-init";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 
@@ -18,8 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Onera Operator",
-  description: "AI operator that runs growth and operations for your startup",
+  title: "Pulsa",
+  description: "El cofundador de IA que lleva tu negocio al siguiente nivel",
 };
 
 export default function RootLayout({
@@ -28,16 +26,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${inter.variable} ${jetbrainsMono.variable}`}
-      >
-        <body className="font-sans">
-          <AuthInit />
-          <PostHogProvider>{children}</PostHogProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html
+      lang="es"
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="font-sans">
+        <PostHogProvider>{children}</PostHogProvider>
+      </body>
+    </html>
   );
 }

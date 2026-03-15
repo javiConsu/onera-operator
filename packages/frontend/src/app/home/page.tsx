@@ -13,7 +13,7 @@ export default function LandingPage() {
     try {
       setLiveData(await publicApi.live());
     } catch {
-      /* keep last */
+      /* mantener datos anteriores */
     }
   }, []);
 
@@ -25,28 +25,28 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background bp-texture overflow-x-hidden">
-      {/* Live terminal bar — always visible at the very top */}
+      {/* Barra terminal siempre visible arriba */}
       <LiveTerminalBar liveData={liveData} />
 
-      {/* Top Banner (Orange Watch it live) */}
+      {/* Banner naranja — en vivo */}
       <TopLiveBanner liveData={liveData} />
 
       {/* Hero */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 sm:px-6">
         <div className="mx-auto max-w-[850px] w-full flex flex-col justify-center pb-[6vh] sm:pb-[10vh]">
 
-          {/* Blueprint tag */}
+          {/* Etiqueta */}
           <div className="inline-flex items-center gap-2 border border-primary/40 bg-primary/5 text-primary px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium font-mono mb-6 w-fit">
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Onera Operator &mdash; Open Source AI
+            Pulsa &mdash; IA Autónoma para Emprendedores
           </div>
 
           <h1 className="font-serif text-[1.75rem] leading-[1.1] tracking-tight text-primary sm:text-[2.5rem] md:text-[3.75rem] mb-4 sm:mb-6 text-left font-extrabold">
-            Your Startup's Autonomous Growth Engine.
+            Tu cofundador de IA que nunca para.
           </h1>
 
           <p className="text-[0.95rem] sm:text-[1.1rem] leading-[1.6] text-muted-foreground mb-8 sm:mb-10 max-w-[700px] pr-4 sm:pr-8 text-left font-sans">
-            Give it your company URL. Every 4 hours, it plans growth tasks, finds leads, sends cold emails, posts to Twitter, and files a daily report — all without you touching a thing.
+            Dale la URL de tu empresa. Cada 4 horas planifica tareas de crecimiento, encuentra leads, envía emails en frío, publica en Twitter y genera un informe diario — todo sin que toques nada.
           </p>
 
           <div className="flex flex-col items-start gap-3 sm:gap-4">
@@ -55,17 +55,17 @@ export default function LandingPage() {
                 asChild
                 className="rounded-sm h-[42px] sm:h-[48px] px-6 sm:px-8 shadow-sm bg-primary border-2 border-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground transition-all font-sans font-bold text-[13px] sm:text-[15px]"
               >
-                <Link href="/login">Get Started</Link>
+                <Link href="/login">Empezar gratis</Link>
               </Button>
               <Link
                 href="/live"
                 className="text-[10px] sm:text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4 uppercase tracking-wider font-mono font-medium"
               >
-                Watch it live &rsaquo;
+                Ver en vivo &rsaquo;
               </Link>
             </div>
             <p className="text-[10px] sm:text-[12px] text-muted-foreground font-mono uppercase tracking-wider">
-              No credit card required &middot; Free to start
+              Sin tarjeta de crédito &middot; Gratis para empezar
             </p>
           </div>
         </div>
@@ -75,11 +75,11 @@ export default function LandingPage() {
       <div className="w-full px-4 sm:px-6 pb-8 sm:pb-12 flex justify-center shrink-0 relative z-10">
         <footer className="w-full max-w-[850px] border-t-2 border-dashed border-border pt-4 sm:pt-6 flex items-start justify-start">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] sm:text-[11px] text-muted-foreground font-mono uppercase tracking-wider">
-            <Link href="https://github.com/anomalyco/onera-operator" target="_blank" className="hover:text-primary transition-colors">GitHub</Link>
-            <Link href="https://x.com/onerachat" target="_blank" className="hover:text-primary transition-colors">Twitter</Link>
-            <Link href="#" className="hover:text-primary transition-colors">Terms</Link>
-            <a href="mailto:contact@onera.chat" className="hover:text-primary transition-colors">
-              contact@onera.chat
+            <Link href="https://github.com/javiConsu/onera-operator" target="_blank" className="hover:text-primary transition-colors">GitHub</Link>
+            <Link href="https://x.com/pulsaai" target="_blank" className="hover:text-primary transition-colors">Twitter</Link>
+            <Link href="#" className="hover:text-primary transition-colors">Términos</Link>
+            <a href="mailto:hola@pulsa.pro" className="hover:text-primary transition-colors">
+              hola@pulsa.pro
             </a>
           </div>
         </footer>
@@ -89,7 +89,7 @@ export default function LandingPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Live terminal bar — vertical multi-line, same style as /live and dashboard
+// Barra terminal en vivo
 // ---------------------------------------------------------------------------
 function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
   const scrollRef = useRef < HTMLDivElement | null > (null);
@@ -100,18 +100,17 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
     el.scrollTop = el.scrollHeight;
   }, [liveData]);
 
-  // Build display lines from live data
   const lines: string[] = [];
 
   if (liveData) {
     for (const t of liveData.tasks.filter((t: any) => t.status === "IN_PROGRESS").slice(0, 2)) {
-      lines.push(`Running: ${t.title}`);
+      lines.push(`Ejecutando: ${t.title}`);
     }
     for (const l of liveData.terminalLines.slice(0, 4)) {
       lines.push(l.text);
     }
     for (const t of liveData.tasks.filter((t: any) => t.status === "COMPLETED").slice(0, 2)) {
-      lines.push(`Done: ${t.title}`);
+      lines.push(`Completado: ${t.title}`);
     }
   }
 
@@ -119,10 +118,10 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
     lines.length > 0
       ? lines
       : [
-        "Initializing Onera Operator...",
-        "Agents online: planner, twitter, outreach, research",
-        "Agent loop scheduled: every 4 hours",
-        "System ready. Awaiting company setup",
+        "Iniciando Pulsa...",
+        "Agentes activos: planificador, twitter, outreach, investigación",
+        "Ciclo de agentes programado: cada 4 horas",
+        "Sistema listo. Esperando configuración de empresa",
       ];
 
   return (
@@ -141,7 +140,7 @@ function LiveTerminalBar({ liveData }: { liveData: PublicLiveData | null }) {
 }
 
 // ---------------------------------------------------------------------------
-// Top Live Banner
+// Banner en vivo (naranja)
 // ---------------------------------------------------------------------------
 function TopLiveBanner({ liveData }: { liveData: PublicLiveData | null }) {
   const tasksDone = liveData?.stats?.totalTasksCompleted || null;
@@ -152,7 +151,7 @@ function TopLiveBanner({ liveData }: { liveData: PublicLiveData | null }) {
       className="w-full bg-[#fa782a] hover:bg-[#d96522] text-white flex items-center justify-center py-2 sm:py-[10px] text-[11px] sm:text-[13px] font-bold font-mono uppercase tracking-wide transition-colors shrink-0 group relative z-20"
     >
       <span className="h-[5px] w-[5px] sm:h-[6px] sm:w-[6px] rounded-full bg-white group-hover:bg-white/80 transition-colors animate-pulse mr-2 sm:mr-[10px] shrink-0" />
-      <span className="truncate">Watch Onera work on {tasksDone ? tasksDone.toLocaleString() : "..."} tasks live &rarr;</span>
+      <span className="truncate">Ve a Pulsa trabajar en {tasksDone ? tasksDone.toLocaleString("es") : "..."} tareas en vivo &rarr;</span>
     </Link>
   );
 }

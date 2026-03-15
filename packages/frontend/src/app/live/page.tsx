@@ -90,7 +90,7 @@ export default function LivePage() {
         <div className="flex h-12 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <Link href="/home" className="font-serif text-2xl font-extrabold tracking-tight text-primary hover:opacity-80 transition-opacity">
-              Onera Operator
+              Pulsa
             </Link>
             <span className="inline-flex items-center gap-1.5 border border-[#fa782a]/30 bg-[#fa782a]/10 text-[#ea580c] px-2 py-1 text-[10px] uppercase tracking-wider font-bold">
               <span className="h-1.5 w-1.5 rounded-full bg-[#fa782a] animate-pulse" />
@@ -105,7 +105,7 @@ export default function LivePage() {
 
       {/* ── 5-column dashboard — collapsible ────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        <CollapsibleColumn title="Operator" className="p-5 space-y-6">
+        <CollapsibleColumn title="Operador" className="p-5 space-y-6">
           <OperatorColumn
             data={data}
             mood={operatorMood}
@@ -113,11 +113,11 @@ export default function LivePage() {
           />
         </CollapsibleColumn>
 
-        <CollapsibleColumn title="Business" className="p-5 space-y-5">
+        <CollapsibleColumn title="Negocio" className="p-5 space-y-5">
           <BusinessColumn stats={data?.stats} companies={data?.companies ?? []} />
         </CollapsibleColumn>
 
-        <CollapsibleColumn title="Tasks" className="p-5">
+        <CollapsibleColumn title="Tareas" className="p-5">
           <TasksColumn tasks={data?.tasks ?? []} stats={data?.stats} />
         </CollapsibleColumn>
 
@@ -153,9 +153,9 @@ function TerminalBar({ lines }: { lines: TerminalLine[] }) {
     lines.length > 0
       ? lines
       : [
-        { text: "Onera Operator online", status: "success", timestamp: new Date().toISOString() },
-        { text: "Agents: planner, twitter, outreach, research, engineer", status: "success", timestamp: new Date().toISOString() },
-        { text: "Waiting for agent activity...", status: "success", timestamp: new Date().toISOString() },
+        { text: "Pulsa online", status: "success", timestamp: new Date().toISOString() },
+        { text: "Agentes: planificador, twitter, captación, investigación, ingeniería", status: "success", timestamp: new Date().toISOString() },
+        { text: "Esperando actividad de los agentes...", status: "success", timestamp: new Date().toISOString() },
       ];
 
   return (
@@ -190,7 +190,7 @@ function OperatorColumn({
   return (
     <>
       {/* Animated operator face */}
-      <CollapsibleSection title="Onera Operator">
+      <CollapsibleSection title="Pulsa">
         <OperatorFace
           mood={mood as Parameters<typeof OperatorFace>[0]["mood"]}
         />
@@ -198,7 +198,7 @@ function OperatorColumn({
 
       {/* Live stream feed */}
       <CollapsibleSection
-        title="Live Feed"
+        title="Feed en Vivo"
         badge={
           <span className="text-[9px] text-green-600 font-mono">SSE</span>
         }
@@ -212,7 +212,7 @@ function OperatorColumn({
       {/* Agent roster */}
       {data && data.agents.length > 0 && (
         <CollapsibleSection
-          title="Agents"
+          title="Agentes"
           badge={
             running > 0 ? (
               <span className="text-[10px] text-primary font-mono animate-pulse">
@@ -275,7 +275,7 @@ function BusinessColumn({
   return (
     <div className="space-y-5">
       {/* Business metrics — Polsia-style */}
-      <CollapsibleSection title="Business">
+      <CollapsibleSection title="Negocio">
         <div className="space-y-3">
           <div>
             <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-muted-foreground">
@@ -328,7 +328,7 @@ function BusinessColumn({
 
       {/* Companies list — Polsia-style */}
       <CollapsibleSection
-        title="Companies"
+        title="Empresas"
         badge={
           companies.length > 0 ? (
             <span className="text-[10px] text-muted-foreground">{companies.length}</span>
@@ -397,7 +397,7 @@ function TasksColumn({
 
   return (
     <CollapsibleSection
-      title="Tasks"
+      title="Tareas"
       badge={
         runningTasks.length > 0 ? (
           <span className="text-[10px] text-primary font-mono animate-pulse">
@@ -673,7 +673,7 @@ function AskColumn() {
       const res = await publicApi.ask(q);
       setMessages((prev) => [...prev, { role: "assistant", text: res.answer }]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong";
+      const msg = err instanceof Error ? err.message : "Algo salió mal";
       setError(msg);
     } finally {
       setLoading(false);
@@ -681,9 +681,9 @@ function AskColumn() {
   }, [input, loading]);
 
   const suggestions = [
-    "What are you working on right now?",
-    "How many tasks have you completed today?",
-    "Which agents are active?",
+    "¿En qué estás trabajando ahora mismo?",
+    "¿Cuántas tareas has completado hoy?",
+    "¿Qué agentes están activos?",
   ];
 
   return (
@@ -713,7 +713,7 @@ function AskColumn() {
                         setMessages((prev) => [...prev, { role: "assistant", text: res.answer }])
                       )
                       .catch((err) =>
-                        setError(err instanceof Error ? err.message : "Something went wrong")
+                        setError(err instanceof Error ? err.message : "Algo salió mal")
                       )
                       .finally(() => {
                         setLoading(false);
@@ -731,7 +731,7 @@ function AskColumn() {
           {messages.map((msg, i) => (
             <div key={i}>
               <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 block mb-0.5">
-                {msg.role === "user" ? "You" : "Operator"}
+                {msg.role === "user" ? "Tú" : "Operador"}
               </span>
               {msg.role === "user" ? (
                 <div className="text-xs leading-relaxed text-muted-foreground">
@@ -806,7 +806,7 @@ function AskColumn() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAsk()}
-              placeholder="Ask anything..."
+              placeholder="Pregunta lo que quieras..."
               disabled={loading}
               className="flex-1 bg-transparent border border-dashed border-border px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 disabled:opacity-50"
             />
