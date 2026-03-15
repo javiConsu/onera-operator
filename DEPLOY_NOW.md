@@ -1,92 +1,136 @@
-# DEPLOY NOW — onera-operator frontend en lanzalo.pro
+# DEPLOY PULSA — Guía Completa Vercel + Railway
 
-## Estado
-✅ Build estático completo (2.8MB, 14 páginas)
-✅ Clerk eliminado (rutas auth simplificiadas)
-✅ `output: export` configurado en next.config.ts
-✅ Todas las rutas dinámicas resueltas
+**Estado del código:** ✅ Listo para deploy (commit: `feat: rebrand Pulsa + demo mode + deploy config`)
+**Dominio:** `pulsa.pro`
+**Actualizado:** 2026-03-15 por Alex (LAN-99)
 
 ---
 
-## OPCIÓN A: Deploy con Vercel CLI (5 minutos)
+## PASO 0: Push del código a GitHub
 
-Ejecuta desde la carpeta raíz del repo:
+**Javi, ejecuta esto en tu máquina con acceso a GitHub:**
 
 ```bash
-# 1. Instala dependencias
-cd packages/frontend
-pnpm install
+# Clona el repo en tu máquina (si no lo tienes)
+git clone https://github.com/javiConsu/onera-operator.git
+cd onera-operator
 
-# 2. Build (ya hecho, pero por si acaso)
-pnpm build
-
-# 3. Deploy con tu token de Vercel
-cd out
-npx vercel deploy --token=TU_VERCEL_TOKEN --prod
-
-# 4. Asigna el dominio lanzalo.pro al nuevo proyecto
-npx vercel domains add lanzalo.pro --token=TU_VERCEL_TOKEN
-```
-
----
-
-## OPCIÓN B: Deploy via Vercel Dashboard (sin CLI)
-
-1. Ve a **vercel.com/dashboard**
-2. Click **Add New Project**
-3. Importa el repo `javiConsu/onera-operator`
-4. Configura:
-   - **Root Directory**: `packages/frontend`
-   - **Framework Preset**: Next.js
-   - **Build Command**: `pnpm build`
-   - **Output Directory**: `out`
-5. Haz click en **Deploy**
-6. Cuando termine, ve a **Settings → Domains**
-7. Añade `lanzalo.pro` y elimínalo del proyecto antiguo (lanzalo)
-
----
-
-## Variables de entorno requeridas
-
-Para el demo SIN backend (solo diseño visual):
-```
-NEXT_PUBLIC_BACKEND_URL=https://lanzalo-production.up.railway.app
-```
-
-Sin esto, los API calls fallan silenciosamente pero la UI se muestra igualmente.
-
----
-
-## Cambios en el repo que necesitas hacer commit+push
-
-```bash
-cd /ruta/al/repo/onera-operator
-
-# Stage los cambios
-git add packages/frontend/src/app/login/page.tsx
-git add packages/frontend/src/app/sign-in/page.tsx
-git add packages/frontend/src/app/sign-up/page.tsx
-git add packages/frontend/src/app/projects/[id]/page.tsx
-git add packages/frontend/vercel.json
-git rm packages/frontend/src/app/login/'[[...sign-in]]'/page.tsx
-git rm packages/frontend/src/app/sign-in/'[[...sign-in]]'/page.tsx
-git rm packages/frontend/src/app/sign-up/'[[...sign-up]]'/page.tsx
-
-# Commit
-git commit -m "fix: static export - remove catch-all auth routes, add vercel.json"
+# Añade el remote del código con los cambios de Pulsa
+git remote add pulsa /tmp/onera-operator  # si tienes acceso al servidor
+# O: copia los archivos manualmente y haz commit+push desde tu máquina
 
 # Push
 git push origin main
 ```
 
-Vercel detectará el push y desplegará automáticamente (si tienes CI/CD configurado).
+*(Si el servidor tiene acceso a internet con credenciales, ejecuta en el servidor:)*
+```bash
+cd /tmp/onera-operator
+git push https://TU_GITHUB_TOKEN@github.com/javiConsu/onera-operator.git main
+```
 
 ---
 
-## Resultado esperado
+## PASO 1: Railway — Backend + PostgreSQL + Redis
 
-- `/home` → Landing page con diseño blueprint
-- `/dashboard` → Dashboard 5 columnas (Company/Tasks/Social/Engineering/Reports)
-- `/live` → Live feed
-- `/login`, `/sign-in`, `/sign-up` → Redirigen a `/home`
-- API calls fallan silenciosamente (sin backend) — UI funciona igual
+**URL:** https://railway.app
+
+### 1.1 Crear proyecto
+1. Click **New Project → Deploy from GitHub repo**
+2. Selecciona `javiConsu/onera-operator`
+3. Railway detecta `railway.json` automáticamente → usa el Dockerfile del backend
+
+### 1.2 Añadir PostgreSQL
+1. En el proyecto → **New Service → PostgreSQL**
+2. Railway crea la BD y expone `DATABASE_URL` automáticamente
+
+### 1.3 Añadir Redis
+1. En el proyecto → **New Service → Redis**
+2. Railway expone `REDIS_URL` automáticamente
+
+### 1.4 Variables de entorno del backend (Settings → Variables)
+```
+AI_PROVIDER=anthropic
+AI_MODEL=claude-sonnet-4-5
+AI_API_KEY=YOUR_ANTHROPIC_API_KEY
+AI_PREMIUM_MODEL=claude-opus-4-6
+AI_PREMIUM_PROVIDER=anthropic
+AI_PREMIUM_API_KEY=YOUR_ANTHROPIC_API_KEY
+CLERK_SECRET_KEY=YOUR_CLERK_SECRET_KEY
+SERPER_API_KEY=YOUR_SERPER_API_KEY
+DEMO_MODE=true
+FRONTEND_URL=https://pulsa.pro
+BACKEND_PORT=3001
+NODE_ENV=production
+AGENT_LOOP_INTERVAL_CRON=0 */4 * * *
+DAILY_REPORT_CRON=0 18 * * *
+AZURE_EMAIL_SENDER=hola@pulsa.pro
+```
+> `DATABASE_URL` y `REDIS_URL` se configuran automáticamente desde los servicios Railway.
+
+### 1.5 Ejecutar migraciones
+Railway → backend → **Shell**:
+```bash
+cd packages/database && npx prisma migrate deploy
+```
+
+### 1.6 Anotar URL del backend
+Railway te da algo como: `https://TU-APP.up.railway.app` → guárdala para el paso 2.
+
+---
+
+## PASO 2: Vercel — Frontend estático
+
+**URL:** https://vercel.com
+
+### 2.1 Importar repo
+1. Click **Add New Project → Import Git Repository**
+2. Selecciona `javiConsu/onera-operator`
+3. Configuración:
+   - **Root Directory:** `packages/frontend`
+   - **Framework Preset:** Next.js
+   - **Build Command:** `pnpm build`
+   - **Output Directory:** `out`
+
+### 2.2 Variables de entorno en Vercel
+```
+NEXT_PUBLIC_BACKEND_URL=https://TU-APP.up.railway.app   ← URL del paso 1.6
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_bmljZS1vcG9zc3VtLTEzLmNsZXJrLmFjY291bnRzLmRldiQ
+```
+
+### 2.3 Deploy + Dominio
+1. Click **Deploy**
+2. Vercel → Settings → Domains → Añade `pulsa.pro`
+3. En tu DNS: CNAME `@` → `cname.vercel-dns.com`
+
+---
+
+## Arquitectura del deploy
+
+```
+pulsa.pro (Vercel — static HTML/JS)
+    └── llama a → backend.up.railway.app (Fastify)
+                      ├── PostgreSQL (Railway)
+                      ├── Redis (Railway)
+                      └── BullMQ workers (mismo proceso)
+```
+
+## QA — Proyectos de test
+
+Una vez desplegado, crear en `pulsa.pro/new`:
+
+1. **AgenciaMarketing MX** — agencia marketing digital México
+2. **EcoModa AR** — e-commerce moda sostenible Argentina
+3. **Academia Emprendedores ES** — cursos online España
+
+## Checklist de QA
+
+- [ ] `pulsa.pro` carga landing page en español
+- [ ] `pulsa.pro/new` → crear empresa funciona
+- [ ] Dashboard carga proyectos
+- [ ] `pulsa.pro/live` → feed en tiempo real
+- [ ] Agentes responden en español
+
+---
+
+*Alex — LAN-99 — 2026-03-15*
